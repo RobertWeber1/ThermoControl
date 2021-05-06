@@ -1,0 +1,23 @@
+EESchema-LIBRARY Version 2.4
+#encoding utf-8
+#
+# MountingHoles
+#
+DEF MountingHoles H 0 40 Y Y 1 F N
+F0 "H" 0 300 50 H V C CNN
+F1 "MountingHoles" 0 -450 50 H V C CNN
+F2 "" 50 350 50 H I C CNN
+F3 "" 50 350 50 H I C CNN
+DRAW
+C 0 150 50 0 1 39 N
+C 0 -300 50 1 1 39 N
+C 0 -150 50 1 1 39 N
+C 0 0 50 1 1 39 N
+X ~ 1 -150 150 100 R 50 50 1 1 N
+X ~ 2 -150 0 100 R 50 50 1 1 N
+X ~ 3 -150 -150 100 R 50 50 1 1 N
+X ~ 4 -150 -300 100 R 50 50 1 1 N
+ENDDRAW
+ENDDEF
+#
+#End Library
