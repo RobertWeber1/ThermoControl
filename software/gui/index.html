@@ -1,0 +1,34 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name='viewport' content='width=device-width' />
+	<title>ThermoControl</title>
+	<link rel="stylesheet" type="text/css" href="style.css" />
+	<link rel="shortcut icon" href="favicon.png"/>
+	<script src="script.js"></script>
+</head>
+<body onload='open_web_socket()'>
+	<div id='Connecting' style='display:none'>
+		<div id='ConnectingContent'>
+			<h3>Connecting</h3>
+			<div class='Spinner'> <p style='display:none'> foo </p> </div>
+		</div>
+	</div>
+	<div id='Connected'>
+		<div id='Main'>
+			<div id='HeadLine'>
+				<h3 >ThermoControl</h3>
+			</div>
+			<div id='content'>
+				<div >
+					<button id='AutoModeButton' onClick='send_command("set_mode", "AUTO")'>Automatic Mode</button>
+					<button id='ManuModeButton' onClick='send_command("set_mode", "MANUAL")'>Manual Mode</button>
+				</div>
+				<div id="channels">
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+</html>

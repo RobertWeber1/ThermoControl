@@ -1,0 +1,56 @@
+body{
+	margin: 0;
+	background: #EFEFEF;
+}
+
+#Connecting {
+	width: 100%;
+	background-color: grey;
+	text-align: center;
+	color: white;
+}
+
+#ConnectingContent {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.Spinner {
+	margin-left: 5px;
+	border: 6px solid #f3f3f3; /* Light grey */
+	border-top: 6px solid #3498db; /* Blue */
+	border-radius: 50%;
+	width: 15px;
+	height: 15px;
+	animation: spin 4s linear infinite;
+}
+
+#Connected{
+	margin:0;
+}
+
+#Main{
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	flex-direction: column;
+}
+
+#HeadLine{
+	margin: 0;
+	border: 0;
+	width: 100%;
+	background-color: #4AA87E;
+	text-align: center;
+	color: white;
+}
+
+@keyframes spin {
+	0% { transform: rotate(0deg); }
+	100% { transform: rotate(360deg); }
+}
+
+.channel {
+
+}

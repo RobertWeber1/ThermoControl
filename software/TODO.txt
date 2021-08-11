@@ -1,0 +1,23 @@
+GUI
+===
+[ ] Zustandsaneige verbessen
+[ ] Touch-able
+[ ] Verbindungsaufbau Mobile-Browser
+[ ] Tempertur oder Fehlerzustand anzeigen
+[ ] Gesammtstrom/Kanalstrom einstellbar machen
+[ ] Updates für einzelne Werte verarbeiten
+
+Controler
+=========
+[ ] Temperatursensorausterung stabilisieren
+[ ] Einstellbare Maximalheizdauer (45min default)
+[ ] IO-Abstraction
+[ ] Schieberegister-Abstraktion
+[ ] EEPROM-Speicher verwenden
+[ ] Updates für einzelne Werte versenden
+
+Hardware
+========
+[ ] Schieberegisterschaltung aufbauen
+[ ] Befestigung für Gehäuse drucken
+[ ] Platine für Temperatursensoren + 2x8-Schieberegister + ESP8266
