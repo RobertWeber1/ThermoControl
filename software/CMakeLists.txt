@@ -15,6 +15,15 @@ FetchContent_MakeAvailable(Catch2)
 
 #-------------------------------------------------------------------------------
 
+FetchContent_Declare(
+  web_ui
+  GIT_REPOSITORY https://github.com/RobertWeber1/web_ui_helper.git
+  GIT_TAG        main)
+
+FetchContent_MakeAvailable(web_ui)
+
+#-------------------------------------------------------------------------------
+
 add_executable(test-ThermoControl
 	test/catch.cc
 	test/sensor.cc
@@ -26,4 +35,5 @@ target_include_directories(test-ThermoControl
 
 target_link_libraries(test-ThermoControl
 	PRIVATE Catch2::Catch2
+	PRIVATE web_ui
 )
