@@ -29,7 +29,6 @@ function open_web_socket()
 			heartbeat_interval =
 				setInterval(function()
 					{
-						console.log("send ---Heatbeat---");
 						connection.send('---Heatbeat---');
 					}, 1000);
 
@@ -41,7 +40,6 @@ function open_web_socket()
 			if(msg.data === '---Heatbeat---')
 			{
 				missed_heartbeats = 0;
-				console.log("received heartbeat");
 				connection.send('---Heatbeat---');
 			}
 			else
@@ -76,114 +74,166 @@ function disable(id)
 	document.getElementById(id).style.display = 'none';
 }
 
-function process_message(raw_data)
+function setup(count)
 {
-	console.log("received message: ", raw_data);
-	var data = JSON.parse(raw_data);
+	console.log("setup ", count, " channels");
 
-	if(data.automaitc_mode)
+	for(var index = 0; index < count; index++)
 	{
-		disable('AutoModeButton');
-		enable('ManuModeButton');
-	}
-	else
-	{
-		enable('AutoModeButton');
-		disable('ManuModeButton');
-	}
-
-	var channels = document.getElementById('channels');
-	channels.innerHTML = "";
-
-	for(const key in data.channels)
-	{
-		const ch_data = data.channels[key];
-		console.log(key, ch_data);
-
 		const channel = document.createElement('div');
 		channel.className = "channel";
-		channel.id = key;
-		if(data.automaitc_mode == false)
-		{
-			var button = document.createElement('button');
-			if(ch_data.output)
+		channel.id = index;
+
+		var off_button = document.createElement('button');
+		off_button.id = index + "OFF";
+		off_button.innerHTML = "OFF";
+		off_button.addEventListener(
+			"click",
+			function()
 			{
-				button.innerHTML = "OFF";
-				button.addEventListener(
-					"click",
-					function()
-					{
-						console.log("turnOFF");
-						send_command("switch", [key, "OFF"]);
-					});
+				console.log("turnOFF");
+				send_command("switch", [index, "OFF"]);
+			});
+		channel.appendChild(off_button);
+
+		var on_button = document.createElement('button');
+		on_button.id = index + "ON";
+		on_button.innerHTML = "ON";
+		on_button.addEventListener(
+			"click",
+			function()
+			{
+				console.log("turnOFF");
+				send_command("switch", [index, "OFF"]);
+			});
+		channel.appendChild(on_button);
+
+		const upper_p = document.createElement('p');
+		const upper_input = document.createElement('input');
+		upper_input.id = index + "UPPER";
+		upper_input.type = "number";
+		upper_input.onchange = send_channel_update;
+		upper_input.value = 0;
+		upper_p.innerHTML = "Obergrenze: ";
+		upper_p.append(upper_input);
+
+		const lower_p = document.createElement('p');
+		const lower_input = document.createElement('input');
+		lower_input.id = index + "LOWER";
+		lower_input.type = "number";
+		lower_input.onchange = send_channel_update;
+		lower_input.value = 0;
+		lower_p.innerHTML = "Untergrenze: ";
+		lower_p.append(lower_input);
+
+		channel.append(upper_p);
+		channel.append(lower_p);
+
+		const p_temp = document.createElement('p');
+		p_temp.append("Temperatur Sensor: ");
+
+		const temp = document.createElement('a');
+		temp.id = index + "temp";
+		temp.innerHTML = "-";
+		p_temp.appendChild(temp);
+		channel.appendChild(p_temp);
+
+
+		const p_output = document.createElement('p');
+		p_output.append("Ausgang: ");
+
+		const output = document.createElement('a');
+		output.id = index + "output";
+		output.innerHTML = "-";
+		p_output.appendChild(output);
+
+		channel.appendChild(p_output);
+
+		var channels = document.getElementById('channels');
+		channels.appendChild(channel);
+	}
+}
+
+function process_message(raw_data)
+{
+	var message = JSON.parse(raw_data);
+
+	if(message.type == "setup")
+	{
+		console.log(message);
+    	setup(message.data);
+	}
+	else if(message.type == "data")
+	{
+		const data = message.data;
+		if(data.automaitc_mode)
+		{
+			disable('AutoModeButton');
+			enable('ManuModeButton');
+		}
+		else
+		{
+			enable('AutoModeButton');
+			disable('ManuModeButton');
+		}
+
+		for(const key in data.channels)
+		{
+			const ch_data = data.channels[key];
+
+			const on = document.getElementById(key + "OFF");
+			const off = document.getElementById(key + "ON");
+
+			const upper = document.getElementById(key + "UPPER");
+			const lower = document.getElementById(key + "LOWER");
+
+			const temp = document.getElementById(key + "temp");
+			const output = document.getElementById(key + "output");
+
+			if(data.automaitc_mode == false)
+			{
+				on.style = "display:block;";
+				off.style = "display:block;";
+				upper.style = "display:none;";
+				lower.style = "display:none;";
 			}
 			else
 			{
-				button.innerHTML = "ON";
-				button.addEventListener(
-					"click",
-					function()
-					{
-						console.log("turnON");
-						send_command("switch", [key, "ON"]);
-					});
+				on.style = "display:none;";
+				off.style = "display:none;";
+				upper.style = "display:block;";
+				lower.style = "display:block;";
 			}
-			channel.appendChild(button);
+
+			if(upper.value != ch_data.upper_bound)
+			{
+				upper.value = ch_data.upper_bound;
+			}
+
+
+			if(lower.value != ch_data.lower_bound)
+			{
+				lower.value = ch_data.lower_bound;
+			}
+
+			if(ch_data.sensor_status == "OK")
+			{
+				temp.innerHTML = ch_data.temperature + " °C";
+			}
+			else
+			{
+				temp.innerHTML = ch_data.sensor_status;
+			}
+
+			if(ch_data.output)
+			{
+				output.innerHTML = "AN";
+			}
+			else
+			{
+				output.innerHTML = "AUS";
+			}
 		}
-		else
-		{
-			const upper_p = document.createElement('p');
-			const upper_input = document.createElement('input');
-			upper_input.id = "UPPER";
-			upper_input.type = "number";
-			upper_input.onchange = send_channel_update;
-			upper_input.value = ch_data.upper_bound;
-			upper_p.innerHTML = "Obergrenze: ";
-			upper_p.append(upper_input);
-
-			const lower_p = document.createElement('p');
-			const lower_input = document.createElement('input');
-			lower_input.id = "LOWER";
-			lower_input.type = "number";
-			lower_input.onchange = send_channel_update;
-			lower_input.value = ch_data.lower_bound;
-			lower_p.innerHTML = "Untergrenze: ";
-			lower_p.append(lower_input);
-
-			channel.append(upper_p);
-			channel.append(lower_p);
-		}
-
-		const temp = document.createElement('p');
-		temp.append("Temperatur: ");
-		temp.append(ch_data.temperature);
-		temp.append(" °C");
-		channel.appendChild(temp);
-
-		const state = document.createElement('p');
-		state.append("Sensorstaus: ");
-		state.append(ch_data.sensor_status);
-		channel.appendChild(state);
-
-		const amps = document.createElement('p');
-		amps.append("Max. Strom: ");
-		amps.append(ch_data.max_current);
-		amps.append(" A");
-		channel.appendChild(amps);
-
-		const output = document.createElement('p');
-		if(ch_data.output)
-		{
-			output.append("Ausgang: AN");
-		}
-		else
-		{
-			output.append("Ausgang: AUS");
-		}
-
-		channel.appendChild(output);
-
-		channels.appendChild(channel);
 	}
 }
 
