@@ -5,6 +5,8 @@
 namespace thermo
 {
 
+using namespace std::chrono_literals;
+
 template<class PinInterfece>
 struct Output
 {
@@ -48,6 +50,7 @@ struct Output
 	void activate()
 	{
 		last_activation_ = std::chrono::steady_clock::now();
+		max_on_deadline_ = last_activation_ + max_on_time_;
 		value_ = true;
 	}
 
@@ -62,12 +65,24 @@ struct Output
 		return value_ ? 1 : 0;
 	}
 
+	bool is_max_on() const
+	{
+		return value_ and std::chrono::steady_clock::now() > max_on_deadline_;
+	}
+
+	void set_max_on_time(std::chrono::seconds value)
+	{
+		max_on_time_ = value;
+	}
+
 private:
 	Pin pin_;
 	MaxCurrent current_;
 	time_point last_activation_;
 	time_point last_deactivation_;
+	time_point max_on_deadline_;
 	bool value_ = false;
+	std::chrono::seconds max_on_time_ = 60s * 5;
 };
 
 } //namespace thermo

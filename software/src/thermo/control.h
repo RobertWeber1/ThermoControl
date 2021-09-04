@@ -14,7 +14,12 @@ namespace thermo
 
 using namespace std::chrono_literals;
 
-template<class Derived, class PinInterfece>
+template<
+	class Derived,
+	class PinInterfece,
+	class StorageInterface,
+	int LED_PIN = 2,
+	int SELECT_PIN = 16>
 struct Control
 {
 	using Channel_t = Channel<PinInterfece>;
@@ -24,14 +29,9 @@ struct Control
 	, max_current_(max_current)
 	, blink_deadline_(std::chrono::steady_clock::now())
 	{
-		PinInterfece::make_output(Pin(15));
-		PinInterfece::make_output(Pin(2));
+		PinInterfece::make_output(Pin(SELECT_PIN));
+		PinInterfece::make_output(Pin(LED_PIN));
 	}
-
-	// void process_sensor_input(size_t index, uint16_t first, uint16_t second)
-	// {
-	// 	channels_[index].process(first, second);
-	// }
 
 	void process()
 	{
@@ -39,16 +39,16 @@ struct Control
 
 		for(size_t index = 0; index < channels_.size(); ++index)
 		{
-			output_value |= channels_[index].output.value() << index;
+			output_value |= channels_[index].output.value() << (index+4);
 		}
 
 		for(size_t index = 0; index < channels_.size(); ++index)
 		{
 			PinInterfece::transfer(~((output_value << 8) | 1<<index));
 
-			PinInterfece::pull_high(Pin(15));
-			delay(10);
-			PinInterfece::pull_low(Pin(15));
+			PinInterfece::pull_high(Pin(SELECT_PIN));
+			delay(1);
+			PinInterfece::pull_low(Pin(SELECT_PIN));
 
 			uint16_t first = PinInterfece::transfer(0);
 			uint16_t second = PinInterfece::transfer(0);
@@ -66,7 +66,6 @@ struct Control
 			{
 				Serial.print("Outputs: ");
 				Serial.println(output_value, HEX);
-
 
 				Serial.print("sensor[");
 				Serial.print(channel_counter++);
@@ -94,7 +93,6 @@ struct Control
 			}
 		}
 
-
 		if(not automatic)
 		{
 			return;
@@ -105,7 +103,8 @@ struct Control
 		for(auto & channel : channels_)
 		{
 			if(channel.sensor.hot_end_temperature() > channel.upper_bound or
-			   channel.sensor.has_error())
+			   channel.sensor.has_error() or
+			   channel.output.is_max_on())
 			{
 				channel.output.deactivate();
 			}
@@ -116,7 +115,7 @@ struct Control
 		for(auto & channel : channels_)
 		{
 			if((channel.sensor.hot_end_temperature() < channel.lower_bound) and
-					channel.output.is_deactivated())
+			   channel.output.is_deactivated())
 			{
 				candidates_for_activation.push_back(&channel);
 			}
@@ -127,11 +126,12 @@ struct Control
 			candidates_for_activation.end(),
 			[](auto & lhs, auto & rhs)
 			{
-				return lhs->output.last_deactivation() > rhs->output.last_deactivation();
+				return lhs->output.last_deactivation() < rhs->output.last_deactivation();
 			});
 
 		for(auto & channel : candidates_for_activation)
 		{
+
 			if(actual_current_ + channel->output.requirred_current() <= max_current_)
 			{
 				channel->output.activate();
@@ -173,6 +173,16 @@ struct Control
 		}
 
 		channels_[id].lower_bound = value;
+	}
+
+	void set_max_on_time(int id, std::chrono::seconds value)
+	{
+		if(id >= channels_.size())
+		{
+			return;
+		}
+
+		channels_[id].output.set_max_on_time(value);
 	}
 
 	void switch_channel_on(int id)
@@ -256,6 +266,11 @@ struct Control
 	float actual_current() const
 	{
 		return actual_current_;
+	}
+
+	size_t channel_count() const
+	{
+		return channels_.size();
 	}
 
 private:

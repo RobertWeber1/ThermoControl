@@ -5,14 +5,14 @@
 #include "web/json_stream.h"
 #include <chrono>
 
-template<class PinInterfece, class SpiInterface>
+template<class PinInterfece, class SpiInterface, class StorageInterface>
 struct System
-: web::Server<System<PinInterfece, SpiInterface>>
-, thermo::Control<System<PinInterfece, SpiInterface>, PinInterfece>
+: web::Server<System<PinInterfece, SpiInterface, StorageInterface>>
+, thermo::Control<System<PinInterfece, SpiInterface, StorageInterface>, PinInterfece, StorageInterface>
 {
-	using Self_t = System<PinInterfece, SpiInterface>;
+	using Self_t = System<PinInterfece, SpiInterface, StorageInterface>;
 	using Server_t = web::Server<Self_t>;
-	using Control_t = thermo::Control<Self_t, PinInterfece>;
+	using Control_t = thermo::Control<Self_t, PinInterfece, StorageInterface>;
 	using time_point = std::chrono::steady_clock::time_point;
 	using Channel_t = typename Control_t::Channel_t;
 	using Control_t::Control;
@@ -23,8 +23,9 @@ struct System
 		Server_t::process();
 	}
 
-	void client_connected(/*Server_t::WSClient & client*/)
+	void client_connected(typename Server_t::WSClient & client)
 	{
+		setup_gui(client);
 		update_gui();
 	}
 
@@ -77,6 +78,14 @@ struct System
 			{
 				Control_t::set_bound(atoi(id.c_str()), thermo::LowerTemp(atoi(value.c_str())));
 			}
+		}
+		//{set_max_on_time: [channelId, 123]}
+		else if(type == "set_max_on_time")
+		{
+			std::string id;
+			std::string value;
+			stream >> id >> value;
+			Control_t::set_max_on_time(atoi(id.c_str()), std::chrono::seconds(atoi(value.c_str())));
 		}
 		//{switch: [channelId, "ON"/"OFF"]}
 		else if(type == "switch")
@@ -157,9 +166,18 @@ private:
 		return std::to_string(i);
 	}
 
+	void setup_gui(typename Server_t::WSClient & /*client*/)
+	{
+		Serial.println("\n\nSETUPGUI\n\n");
+		std::string data =
+			"{" + enquote("type") + ":" + enquote("setup") + ","
+			    + enquote("data") + ":" + std::to_string(Control_t::channel_count()) + "}";
+		Server_t::publish(data.c_str());
+	}
+
 	void update_gui()
 	{
-		std::string data = "{"
+		std::string data = "{" + enquote("type") + ":" + enquote("data") + "," + enquote("data") + ":{"
 			+ enquote("automaitc_mode") + ":" + str(Control_t::is_automatic()) + ","
 			+ enquote("max_current") + ":" + str(Control_t::max_current()) + ","
 			+ enquote("actual_current") + ":" + str(Control_t::actual_current()) + ","
@@ -186,7 +204,7 @@ private:
 					}
 			});
 
-		data += "}}";
+		data += "}}}";
 
 		// Serial.println("send update message: ");
 		// Serial.println(data.c_str());

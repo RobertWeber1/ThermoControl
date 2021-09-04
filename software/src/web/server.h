@@ -82,6 +82,8 @@ private:
 		Serial.print("[");
 		Serial.print(slot);
 		Serial.println("] WS-Client connected");
+
+		derived().client_connected(ws_clients[slot]);
 	}
 
 	void process_ws_clients()
@@ -128,14 +130,14 @@ public:
 			using namespace websockets;
 
 			onEvent(
-				[&, &context](WebsocketsClient& c, WebsocketsEvent type, WSInterfaceString)
+				[&, &context, this](WebsocketsClient& c, WebsocketsEvent type, WSInterfaceString)
 				{
 					switch(type)
 					{
 					case WebsocketsEvent::ConnectionOpened:
 
-						print("connected");
-						context.client_connected(/**this*/);
+						print("connected   !!!!!!!!!!!!!!!!!!!");
+						context.client_connected(*this);
 						break;
 
 					case WebsocketsEvent::ConnectionClosed:
