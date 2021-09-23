@@ -130,7 +130,7 @@ public:
 			using namespace websockets;
 
 			onEvent(
-				[&, &context, this](WebsocketsClient& c, WebsocketsEvent type, WSInterfaceString)
+				[&context, this](WebsocketsClient& /*c*/, WebsocketsEvent type, WSInterfaceString)
 				{
 					switch(type)
 					{
@@ -157,7 +157,7 @@ public:
 				});
 
 			onMessage(
-				[&, &context](WebsocketsClient& client, WebsocketsMessage const& msg)
+				[&context, this](WebsocketsClient& /*client*/, WebsocketsMessage const& msg)
 				{
 					if(msg.data() == "---Heatbeat---")
 					{
@@ -205,7 +205,6 @@ public:
 					print("heartbeat timed out!");
 					close();
 					heartbeat_deadline = time_point::max();
-					time_point heartbeat_deadline = time_point::max();
 				}
 			}
 		}

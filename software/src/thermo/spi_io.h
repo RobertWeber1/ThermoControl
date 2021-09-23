@@ -50,7 +50,7 @@ struct SpiIO
 		Interface::pull_low(select_pin);
 	}
 
-	uint16_t set(uint16_t value)
+	void set(uint16_t value)
 	{
 		uint16_t result = Interface::transfer(value);
 		Interface::pull_high(select_pin);

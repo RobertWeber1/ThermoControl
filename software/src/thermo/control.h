@@ -25,8 +25,8 @@ struct Control
 	using Channel_t = Channel<PinInterfece>;
 
 	Control(std::vector<Channel_t> const& channels, MaxCurrent max_current)
-	: channels_(channels)
-	, max_current_(max_current)
+	: max_current_(max_current)
+	, channels_(channels)
 	, blink_deadline_(std::chrono::steady_clock::now())
 	{
 		PinInterfece::make_output(Pin(SELECT_PIN));
@@ -155,7 +155,7 @@ struct Control
 		actual_current_ = 0.0f;
 	}
 
-	void set_bound(int id, UpperTemp value)
+	void set_bound(size_t id, UpperTemp value)
 	{
 		if(id >= channels_.size())
 		{
@@ -165,7 +165,7 @@ struct Control
 		channels_[id].upper_bound = value;
 	}
 
-	void set_bound(int id, LowerTemp value)
+	void set_bound(size_t id, LowerTemp value)
 	{
 		if(id >= channels_.size())
 		{
@@ -175,7 +175,7 @@ struct Control
 		channels_[id].lower_bound = value;
 	}
 
-	void set_max_on_time(int id, std::chrono::seconds value)
+	void set_max_on_time(size_t id, std::chrono::seconds value)
 	{
 		if(id >= channels_.size())
 		{
@@ -185,7 +185,7 @@ struct Control
 		channels_[id].output.set_max_on_time(value);
 	}
 
-	void switch_channel_on(int id)
+	void switch_channel_on(size_t id)
 	{
 		if(automatic)
 		{
@@ -217,7 +217,7 @@ struct Control
 		actual_current_ += channel.output.requirred_current();
 	}
 
-	void switch_channel_off(int id)
+	void switch_channel_off(size_t id)
 	{
 		if(automatic)
 		{
@@ -247,7 +247,7 @@ struct Control
 	template<class Func>
 	void for_each_channel(Func func) const
 	{
-		for(int i = 0; i < channels_.size(); ++i)
+		for(size_t i = 0; i < channels_.size(); ++i)
 		{
 			func(i, channels_.size(), channels_[i]);
 		}
@@ -282,10 +282,10 @@ private:
 private:
 	MaxCurrent max_current_;
 	std::vector<Channel_t> channels_;
-	bool automatic = false;
-	float actual_current_ = 0.0f;
 	std::chrono::steady_clock::time_point blink_deadline_;
+	float actual_current_ = 0.0f;
 	uint16_t output_counter_ = 1;
+	bool automatic = false;
 };
 
 
