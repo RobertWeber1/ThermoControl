@@ -75,6 +75,11 @@ struct Output
 		max_on_time_ = value;
 	}
 
+	std::chrono::seconds get_max_on_time() const
+	{
+		return max_on_time_;
+	}
+
 private:
 	Pin pin_;
 	MaxCurrent current_;

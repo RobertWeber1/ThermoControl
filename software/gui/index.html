@@ -9,7 +9,7 @@
 	<script src="script.js"></script>
 </head>
 
-<body onload='setup(3); test_data();'>
+<body onload='open_web_socket();'>
 	<div id='Connecting' style='display:none'>
 		<div id='ConnectingContent'>
 			<h3>Connecting</h3>
@@ -26,8 +26,7 @@
 					<button id='AutoModeButton' onClick='send_command("set_mode", "AUTO")'>Automatic Mode</button>
 					<button id='ManuModeButton' onClick='send_command("set_mode", "MANUAL")'>Manual Mode</button>
 				</div>
-				<div id="channels">
-				</div>
+				<div id="channels">foo</div>
 			</div>
 		</div>
 	</div>

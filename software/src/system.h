@@ -5,14 +5,24 @@
 #include "web/json_stream.h"
 #include <chrono>
 
-template<class PinInterfece, class SpiInterface, class StorageInterface>
+
+template<
+	class PinInterfece,
+	class SpiInterface,
+	class StorageInterface,
+	uint8_t ChannelCount>
 struct System
-: web::Server<System<PinInterfece, SpiInterface, StorageInterface>>
-, thermo::Control<System<PinInterfece, SpiInterface, StorageInterface>, PinInterfece, StorageInterface>
+: StorageInterface
+, web::Server<System<PinInterfece, SpiInterface, StorageInterface, ChannelCount>>
+, thermo::Control<
+	System<PinInterfece, SpiInterface, StorageInterface, ChannelCount>,
+	PinInterfece,
+	StorageInterface,
+	ChannelCount>
 {
-	using Self_t = System<PinInterfece, SpiInterface, StorageInterface>;
+	using Self_t = System<PinInterfece, SpiInterface, StorageInterface, ChannelCount>;
 	using Server_t = web::Server<Self_t>;
-	using Control_t = thermo::Control<Self_t, PinInterfece, StorageInterface>;
+	using Control_t = thermo::Control<Self_t, PinInterfece, StorageInterface, ChannelCount>;
 	using time_point = std::chrono::steady_clock::time_point;
 	using Channel_t = typename Control_t::Channel_t;
 	using Control_t::Control;
@@ -70,7 +80,7 @@ struct System
 			Serial.println(bounds.c_str());
 			Serial.print("value: ");
 			Serial.println(value.c_str());
-			if(bounds == "UPPER")
+			if(bounds.find("UPPER") != std::string::npos)
 			{
 				Control_t::set_bound(atoi(id.c_str()), thermo::UpperTemp(atoi(value.c_str())));
 			}

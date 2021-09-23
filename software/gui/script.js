@@ -11,7 +11,7 @@ function open_web_socket()
 	}
 
 	connection =
-		new WebSocket('ws://192.168.4.1:8080/', ['Display']);
+		new WebSocket("ws://192.168.4.1:8080/", ["Display"]);
 	var heartbeat_interval = null;
 
 	var missed_heartbeats = 0;
@@ -29,7 +29,7 @@ function open_web_socket()
 			heartbeat_interval =
 				setInterval(function()
 					{
-						connection.send('---Heatbeat---');
+						connection.send("---Heatbeat---");
 					}, 1000);
 
 			connected_event();
@@ -37,10 +37,10 @@ function open_web_socket()
 	connection.onmessage =
 		function (msg)
 		{
-			if(msg.data === '---Heatbeat---')
+			if(msg.data === "---Heatbeat---")
 			{
 				missed_heartbeats = 0;
-				connection.send('---Heatbeat---');
+				connection.send("---Heatbeat---");
 			}
 			else
 			{
@@ -50,14 +50,14 @@ function open_web_socket()
 	connection.onerror =
 		function ()
 		{
-			console.log('WebSocket closed, try reconnect in 500ms...');
+			console.log("WebSocket closed, try reconnect in 500ms...");
 			reconnect_timer = setTimeout(open_web_socket, 50000);
 			clearInterval(heartbeat_interval);
 		};
 	connection.onclose =
 		function ()
 		{
-			console.log('connecton closed by Server?');
+			console.log("connecton closed by Server?");
 			connection.onerror();
 		};
 }
@@ -66,25 +66,28 @@ function open_web_socket()
 function enable(id)
 {
 	document.getElementById(id).disabled = false;
-	document.getElementById(id).style.display = 'block';
+	document.getElementById(id).style.display = "block";
 }
 
 function disable(id)
 {
-	document.getElementById(id).style.display = 'none';
+	document.getElementById(id).style.display = "none";
 }
 
 function setup(count)
 {
 	console.log("setup ", count, " channels");
 
-	for(var index = 0; index < count; index++)
+	var channels = document.getElementById("channels");
+	channels.innerHTML = "";
+
+	for(var index = 0; index < count; index = index + 1)
 	{
-		const channel = document.createElement('div');
+		const channel = document.createElement("div");
 		channel.className = "channel";
 		channel.id = index;
 
-		var off_button = document.createElement('button');
+		var off_button = document.createElement("button");
 		off_button.id = index + "OFF";
 		off_button.innerHTML = "OFF";
 		off_button.addEventListener(
@@ -94,7 +97,7 @@ function setup(count)
 			}(index));
 		channel.appendChild(off_button);
 
-		var on_button = document.createElement('button');
+		var on_button = document.createElement("button");
 		on_button.id = index + "ON";
 		on_button.innerHTML = "ON";
 		on_button.addEventListener(
@@ -104,8 +107,8 @@ function setup(count)
 			}(index));
 		channel.appendChild(on_button);
 
-		const upper_p = document.createElement('p');
-		const upper_input = document.createElement('input');
+		const upper_p = document.createElement("p");
+		const upper_input = document.createElement("input");
 		upper_input.id = index + "UPPER";
 		upper_input.type = "number";
 		upper_input.onchange = send_channel_update;
@@ -113,8 +116,8 @@ function setup(count)
 		upper_p.innerHTML = "Obergrenze: ";
 		upper_p.append(upper_input);
 
-		const lower_p = document.createElement('p');
-		const lower_input = document.createElement('input');
+		const lower_p = document.createElement("p");
+		const lower_input = document.createElement("input");
 		lower_input.id = index + "LOWER";
 		lower_input.type = "number";
 		lower_input.onchange = send_channel_update;
@@ -125,27 +128,25 @@ function setup(count)
 		channel.append(upper_p);
 		channel.append(lower_p);
 
-		const p_temp = document.createElement('p');
+		const p_temp = document.createElement("p");
 		p_temp.append("Temperatur Sensor: ");
 
-		const temp = document.createElement('a');
+		const temp = document.createElement("a");
 		temp.id = index + "temp";
 		temp.innerHTML = "-";
 		p_temp.appendChild(temp);
 		channel.appendChild(p_temp);
 
 
-		const p_output = document.createElement('p');
+		const p_output = document.createElement("p");
 		p_output.append("Ausgang: ");
 
-		const output = document.createElement('a');
+		const output = document.createElement("a");
 		output.id = index + "output";
 		output.innerHTML = "-";
 		p_output.appendChild(output);
 
 		channel.appendChild(p_output);
-
-		var channels = document.getElementById('channels');
 		channels.appendChild(channel);
 	}
 }
@@ -157,6 +158,7 @@ function process_message(raw_data)
 
 function process_json_message(message)
 {
+	console.log("process_json_message: ", message);
 	if(message.type == "setup")
 	{
 		console.log(message);
@@ -165,15 +167,17 @@ function process_json_message(message)
 	else if(message.type == "data")
 	{
 		const data = message.data;
+
+		console.log(data);
 		if(data.automaitc_mode)
 		{
-			disable('AutoModeButton');
-			enable('ManuModeButton');
+			disable("AutoModeButton");
+			enable("ManuModeButton");
 		}
 		else
 		{
-			enable('AutoModeButton');
-			disable('ManuModeButton');
+			enable("AutoModeButton");
+			disable("ManuModeButton");
 		}
 
 		for(const key in data.channels)
@@ -291,23 +295,23 @@ function test_data()
 
 function process_state(state)
 {
-	document.getElementById('State').innerHTML = 'State: ' + state;
+	document.getElementById("State").innerHTML = "State: " + state;
 	if((state === "Initial") || (state == "Idle"))
 	{
-		document.getElementById('TextInput').value = "";
+		document.getElementById("TextInput").value = "";
 	}
 }
 
 function connected_event()
 {
-	document.getElementById('Connecting').style.display = 'none';
-	document.getElementById('Connected').style.display = 'block';
+	document.getElementById("Connecting").style.display = "none";
+	document.getElementById("Connected").style.display = "block";
 }
 
 function disconnected_event()
 {
-	document.getElementById('Connecting').style.display = 'block';
-	document.getElementById('Connected').style.display = 'none';
+	document.getElementById("Connecting").style.display = "block";
+	document.getElementById("Connected").style.display = "none";
 }
 
 function isValid(obj)

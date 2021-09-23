@@ -4,6 +4,7 @@
 #include <chrono>
 //#include <EEPROM.h>
 
+
 struct Interface
 {
 	static void make_output(thermo::Pin pin)
@@ -53,11 +54,44 @@ struct Interface
 
 struct StorageInterface
 {
-  
+	StorageInterface()
+	{
+		if (!SD.begin(15)) {
+			Serial.println("initialization failed. Things to check:");
+			Serial.println("1. is a card inserted?");
+			Serial.println("2. is your wiring correct?");
+			Serial.println("3. did you change the chipSelect pin to match your shield or module?");
+			Serial.println("Note: press reset or reopen this Serial Monitor after fixing your issue!");
+		}
+	}
+
+	template<class T>
+	static T read(char const* filename, T default_value)
+	{
+		if(SD.exists(filename))
+		{
+			File config = SD.open(filename, FILE_READ);
+			config.read(reinterpret_cast<uint8_t *>(&default_value), sizeof(T));
+			config.close();
+			Serial.println("read config from file");
+		}
+
+		return default_value;
+	}
+
+	template<class T>
+	static void write(char const* filename, T const& value)
+	{
+		File config = SD.open(filename, FILE_WRITE);
+		config.seek(0);
+		config.write(reinterpret_cast<char const*>(&value), sizeof(T));
+		config.close();
+		Serial.println("write config to file");
+	}
 };
 
 using Channel_t = thermo::Channel<Interface>;
-using System_t = System<Interface, Interface, StorageInterface>;
+using System_t = System<Interface, Interface, StorageInterface, 3>;
 using Sensor_t = thermo::Sensor;
 using Output_t = thermo::Output<Interface>;
 System_t * sys;
@@ -65,26 +99,61 @@ System_t * sys;
 using io_t = thermo::SpiIO<Interface>;
 io_t * test_io;
 
+
+// struct Config
+// {
+// 	bool val1;
+// 	int val2;
+// 	float val3;
+// };
+
 void setup() {
 	Serial.begin(115200);
 	Serial.println("\nStart");
 	SPI.begin();
 	SPI.setClockDivider(SPI_CLOCK_DIV16);
 
-  pinMode(0, OUTPUT);
-  digitalWrite(0, LOW);
+	pinMode(0, OUTPUT);
+	digitalWrite(0, LOW);
 
-  if (!SD.begin(15)) {
-    Serial.println("initialization failed. Things to check:");
-    Serial.println("1. is a card inserted?");
-    Serial.println("2. is your wiring correct?");
-    Serial.println("3. did you change the chipSelect pin to match your shield or module?");
-    Serial.println("Note: press reset or reopen this Serial Monitor after fixing your issue!");
-    //while (true);
-  }
-  
+	if (!SD.begin(15)) {
+		Serial.println("initialization failed. Things to check:");
+		Serial.println("1. is a card inserted?");
+		Serial.println("2. is your wiring correct?");
+		Serial.println("3. did you change the chipSelect pin to match your shield or module?");
+		Serial.println("Note: press reset or reopen this Serial Monitor after fixing your issue!");
+	}
+
+	// if(not SD.exists("config.bin"))
+	// {
+	// 	Config cfg{true, 1234, 5.678f};
+	// 	Serial.print("config size: ");
+	// 	Serial.println(sizeof(Config));
+	// 	Serial.println("config.bin not found -> create it");
+	// 	File config = SD.open("config.bin", FILE_WRITE);
+	// 	config.write(reinterpret_cast<char const*>(&cfg), sizeof(Config));
+	// 	config.close();
+	// }
+	// else
+	// {
+	// 	Serial.println("found config.bin :-D");
+	// 	Config cfg;
+	// 	File config = SD.open("config.bin", FILE_READ);
+	// 	config.read(reinterpret_cast<uint8_t *>(&cfg), sizeof(Config));
+	// 	config.close();
+
+	// 	Serial.print("config val1: ");
+	// 	Serial.println(cfg.val1);
+
+	// 	Serial.print("config val2: ");
+	// 	Serial.println(cfg.val2);
+
+	// 	Serial.print("config val3: ");
+	// 	Serial.println(cfg.val3);
+	// }
+
 	sys = new System_t(
-		std::vector<Channel_t>{
+		std::array<Channel_t, 3>{
 		Channel_t{
 			thermo::LowerTemp(190.0f),
 			thermo::UpperTemp(200.0f),
@@ -111,5 +180,5 @@ void setup() {
 void loop()
 {
 	sys->process();
-  digitalWrite(0, HIGH);
+	digitalWrite(0, HIGH);
 }

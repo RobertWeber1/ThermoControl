@@ -18,7 +18,6 @@ namespace thermo
 template<class PinInterfece>
 struct Channel
 {
-
 	LowerTemp lower_bound;
 	UpperTemp upper_bound;
 	Sensor sensor;

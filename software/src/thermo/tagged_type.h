@@ -8,6 +8,9 @@ struct Tagged
 {
 	using Self_t = Tagged<Tag, Type>;
 
+	Tagged()
+	{}
+
 	explicit Tagged(Type val)
 	: value_(val)
 	{}

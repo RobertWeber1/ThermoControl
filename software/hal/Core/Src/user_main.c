@@ -100,6 +100,7 @@ void user_main()
 	HAL_GPIO_WritePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(SPI1_SEL_NEG_GPIO_Port, SPI1_SEL_NEG_Pin, GPIO_PIN_SET);
 
+	puts("-------------------Start----------------");
 	// float delay = 0.005f;
 	// float
 
