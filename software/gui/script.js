@@ -89,11 +89,9 @@ function setup(count)
 		off_button.innerHTML = "OFF";
 		off_button.addEventListener(
 			"click",
-			function()
-			{
-				console.log("turnOFF");
-				send_command("switch", [index, "OFF"]);
-			});
+			function(i) {
+				return function() {send_command("switch", [i, "OFF"]); };
+			}(index));
 		channel.appendChild(off_button);
 
 		var on_button = document.createElement('button');
@@ -101,11 +99,9 @@ function setup(count)
 		on_button.innerHTML = "ON";
 		on_button.addEventListener(
 			"click",
-			function()
-			{
-				console.log("turnOFF");
-				send_command("switch", [index, "OFF"]);
-			});
+			function(i) {
+				return function() { send_command("switch", [i, "ON"]); };
+			}(index));
 		channel.appendChild(on_button);
 
 		const upper_p = document.createElement('p');
@@ -156,8 +152,11 @@ function setup(count)
 
 function process_message(raw_data)
 {
-	var message = JSON.parse(raw_data);
+	process_json_message(JSON.parse(raw_data));
+}
 
+function process_json_message(message)
+{
 	if(message.type == "setup")
 	{
 		console.log(message);
@@ -192,15 +191,26 @@ function process_message(raw_data)
 
 			if(data.automaitc_mode == false)
 			{
-				on.style = "display:block;";
-				off.style = "display:block;";
+				if(ch_data.output)
+				{
+					on.style = "display:block;";
+					off.style = "display:none;";
+				}
+				else
+				{
+					on.style = "display:none;";
+					off.style = "display:block;";
+				}
 				upper.style = "display:none;";
 				lower.style = "display:none;";
 			}
 			else
 			{
+
 				on.style = "display:none;";
 				off.style = "display:none;";
+
+
 				upper.style = "display:block;";
 				lower.style = "display:block;";
 			}
@@ -235,6 +245,48 @@ function process_message(raw_data)
 			}
 		}
 	}
+}
+
+function test_data()
+{
+	const data = {
+		type: "data",
+		data: {
+			automaitc_mode: true,
+			max_current: 30,
+			actual_current: 30,
+			channels: {
+				"0": {
+					lower_bound: 101,
+					upper_bound: 201,
+					temperature: 35,
+					max_current: 30,
+					sensor_status: "Short To Ground",
+					output: false,
+					ontime: 0,
+					laston: 234},
+				"1": {
+					lower_bound: 102,
+					upper_bound: 202,
+					temperature: 40,
+					max_current: 30,
+					sensor_status: "OK",
+					output: true,
+					ontime: 345,
+					laston: 0},
+				"2": {
+					lower_bound: 103,
+					upper_bound: 203,
+					temperature: 50,
+					max_current: 30,
+					sensor_status: "OK",
+					output: false,
+					ontime: 0,
+					laston: 456},
+			}
+		} };
+
+	process_json_message(data);
 }
 
 function process_state(state)

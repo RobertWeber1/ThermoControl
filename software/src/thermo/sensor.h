@@ -9,7 +9,7 @@ namespace thermo
 
 struct Sensor
 {
-	Sensor(FilterCoefficient coeffitient = FilterCoefficient(0.96f))
+	Sensor(FilterCoefficient coeffitient = FilterCoefficient(0.3f))
 	: filter_hotend_(coeffitient)
 	, filter_internal_(coeffitient)
 	{}
@@ -24,8 +24,8 @@ struct Sensor
 		if(not fault)
 		{
 			filter_hotend_.value((first_word>>2)/4.0f);
-			filter_internal_.value((second_word>>4)/16.0f);
 		}
+		filter_internal_.value((second_word>>4)/16.0f);
 	}
 
 	float hot_end_temperature() const
@@ -60,6 +60,27 @@ struct Sensor
 			has_short_to_gnd() or
 			has_short_to_vcc();
 	}
+
+	char const* error_str()
+	{
+		if(open_conn_)
+		{
+			return "Open Connection";
+		}
+
+		if(short_to_gnd_)
+		{
+			return "Short to GND";
+		}
+
+		if(short_to_vcc_)
+		{
+			return "Short to VCC";
+		}
+
+		return "No Error";
+	}
+
 
 private:
 	Filter filter_hotend_;
