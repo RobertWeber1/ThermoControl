@@ -91,6 +91,23 @@ inline void process_command(uint8_t cmd)
 	}
 }
 					;
+void print_state(thermo::Sensor const& sensor)
+{
+	if(sensor.has_error())
+	{
+		printf(
+			"Sensor: %s (intern: %d C)\n",
+			sensor.error_str(),
+			static_cast<int>(sensor.internal_temperatur()));
+	}
+	else
+	{
+		printf(
+			"Sensor: %d C (intern: %d C)\n",
+			static_cast<int>(sensor.hot_end_temperature()),
+			static_cast<int>(sensor.internal_temperatur()));
+	}
+}
 
 
 void user_main()
@@ -98,33 +115,33 @@ void user_main()
 	RetargetInit(&huart2);
 
 	HAL_GPIO_WritePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin, GPIO_PIN_RESET);
+	HAL_Delay(100);
+	HAL_GPIO_WritePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin, GPIO_PIN_SET);
+	HAL_Delay(100);
+	HAL_GPIO_WritePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin, GPIO_PIN_RESET);
+	HAL_Delay(100);
+	HAL_GPIO_WritePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin, GPIO_PIN_SET);
+	HAL_Delay(100);
+	HAL_GPIO_WritePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin, GPIO_PIN_RESET);
+	HAL_Delay(100);
+
 	HAL_GPIO_WritePin(SPI1_SEL_NEG_GPIO_Port, SPI1_SEL_NEG_Pin, GPIO_PIN_SET);
 
 	puts("-------------------Start----------------");
-	// float delay = 0.005f;
-	// float
-
-	// TIM1->CCR1 = 16000;
-	// TIM1->ARR = 30000;
-	// HAL_SPI_TransmitReceive_IT(
-	// 	&hspi2,
-	// 	reinterpret_cast<uint8_t*>(txbuf),
-	// 	reinterpret_cast<uint8_t*>(rxbuf),
-	// 	2);
 
 	HAL_TIM_OnePulse_Start_IT(&htim1, TIM_CHANNEL_1);
-	// HAL_ADC_Start_IT(&hadc1);
 	thermo::Sensor sensor;
 
 	HAL_GPIO_WritePin(SPI1_SEL_NEG_GPIO_Port, SPI1_SEL_NEG_Pin, GPIO_PIN_RESET);
 	HAL_SPI_Receive(&hspi1, reinterpret_cast<uint8_t*>(txbuf), 2, 10000);
 	HAL_GPIO_WritePin(SPI1_SEL_NEG_GPIO_Port, SPI1_SEL_NEG_Pin, GPIO_PIN_SET);
 
+	sensor.process(txbuf[0], txbuf[1]);
+
+	print_state(sensor);
+
 	while (1)
 	{
-		// printf("TIM1->CNT: %ld\n", TIM1->CNT);
-		// printf("min: %d, max: %d\n", last_min_current, last_max_current);
-
 		if(HAL_SPI_TransmitReceive(
 			&hspi2,
 			reinterpret_cast<uint8_t*>(txbuf),
@@ -132,16 +149,12 @@ void user_main()
 			2,
 			0xffff) == HAL_OK)
 		{
-			// printf("%s: cmd: %04x, %04x\n",__FUNCTION__, rxbuf[0], rxbuf[1]);
-
 			if(rxbuf[0] == 0x434d)
 			{
 				uint8_t hops = rxbuf[1] & 0x00ff;
 				uint8_t cmd = rxbuf[1] >> 8;
-				// printf("got cmd id, hops: %02x, cmd: %02x\n", hops, cmd);
 				if(hops == 0)
 				{
-					// rxbuf[1] >> 8
 					process_command(cmd);
 					HAL_GPIO_WritePin(SPI1_SEL_NEG_GPIO_Port, SPI1_SEL_NEG_Pin, GPIO_PIN_RESET);
 					HAL_SPI_Receive(&hspi1, reinterpret_cast<uint8_t*>(txbuf), 2, 10000);
@@ -149,20 +162,7 @@ void user_main()
 
 					sensor.process(txbuf[0], txbuf[1]);
 
-					if(sensor.has_error())
-					{
-						printf(
-							"Sensor: %s (intern: %d C)\n",
-							sensor.error_str(),
-							static_cast<int>(sensor.internal_temperatur()));
-					}
-					else
-					{
-						printf(
-							"Sensor: %d C (intern: %d C)\n",
-							static_cast<int>(sensor.hot_end_temperature()),
-							static_cast<int>(sensor.internal_temperatur()));
-					}
+					print_state(sensor);
 				}
 				else
 				{
@@ -175,16 +175,8 @@ void user_main()
 				txbuf[0] = rxbuf[0];
 				txbuf[1] = rxbuf[1];
 			}
-			// printf("%s: send: %04x, %04x\n",__FUNCTION__, txbuf[0], txbuf[1]);
-			// printf("%s: cmd: %04x, %04x\n",__FUNCTION__, rxbuf[0], rxbuf[1]);
-
 		}
-
-
-
-		// HAL_Delay(1000);
 	}
-
 }
 
 

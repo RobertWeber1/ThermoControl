@@ -61,7 +61,7 @@ struct Sensor
 			has_short_to_vcc();
 	}
 
-	char const* error_str()
+	char const* error_str() const
 	{
 		if(open_conn_)
 		{
