@@ -73,6 +73,7 @@ struct Output
 	void set_max_on_time(std::chrono::seconds value)
 	{
 		max_on_time_ = value;
+		printf("set_max_on_time: %lds\n", static_cast<long int>(max_on_time_.count()));
 	}
 
 	std::chrono::seconds get_max_on_time() const

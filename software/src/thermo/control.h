@@ -14,11 +14,45 @@ namespace thermo
 
 using namespace std::chrono_literals;
 
+
+template<uint8_t ChannelCount>
+struct IOBuffer
+{
+	uint16_t send[2*ChannelCount]; //= {0x434D, 0x0003, 0x434D, 0x0002, 0x434D, 0x0001, 0x434D, 0x0000};
+  	uint16_t recv[2*ChannelCount]; //= {0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff};
+
+  	static uint8_t units()
+  	{
+  		return 2 * ChannelCount;
+  	}
+
+  	IOBuffer()
+  	{
+  		for(uint8_t i = 0; i < ChannelCount*2; i=i+2)
+  		{
+  			send[i] = 0x434D;
+  			send[i+1] = i;
+  			recv[i] = 0xffff;
+  			recv[i+1] = 0xffff;
+  		}
+  	}
+
+  	void set_channel(uint8_t channel, uint8_t value)
+  	{
+  		size_t index = channel * 2 + 1;
+  		if(index < sizeof(send))
+  		{
+  			send[index] = (send[index] & 0x00ff) | (value << 8);
+  		}
+  	}
+};
+
+
 template<
 	class Derived,
 	class PinInterfece,
 	class StorageInterface,
-	uint8_t ChannelCount = 3,
+	uint8_t ChannelCount,
 	int LED_PIN = 2,
 	int SELECT_PIN = 16>
 struct Control
@@ -75,11 +109,11 @@ struct Control
 
 		if(cfg.is_automatic)
 		{
-			set_automatic();
+			set_automatic_();
 		}
 		else
 		{
-			set_manual();
+			set_manual_();
 		}
 	}
 
@@ -107,24 +141,22 @@ struct Control
 
 	void print(Config const& cfg) const
 	{
-		printf("Config: %d\n", cfg.is_automatic);
+		printf("\tis_automatic: %d\n", cfg.is_automatic);
 
 		for(size_t i = 0; i < cfg.bounds.size(); ++i)
 		{
-			Serial.print(i);
-			Serial.print(": ");
-			Serial.print("lower: ");
-			Serial.print(std::get<0>(cfg.bounds[i]));
-			Serial.print(", upper: ");
-			Serial.print(std::get<1>(cfg.bounds[i]));
-			Serial.print(", on_time: ");
-			Serial.println(std::get<2>(cfg.bounds[i]).count());
+			printf(
+				"\t%d: lower: %lf, upper: %lf, on_time: %ld\n",
+				i,
+				std::get<0>(cfg.bounds[i]).get(),
+				std::get<1>(cfg.bounds[i]).get(),
+				static_cast<long int>(std::get<2>(cfg.bounds[i]).count()));
 		}
 	}
 
 	void update_config()
 	{
-		Serial.println("update_config");
+		puts("update_config");
 		auto const cfg = Config{automatic, get_bounds()};
 		StorageInterface::write("config.bin", cfg);
 		print(cfg);
@@ -136,58 +168,58 @@ struct Control
 
 		for(size_t index = 0; index < channels_.size(); ++index)
 		{
-			output_value |= channels_[index].output.value() << (index+4);
+			io_buffer.set_channel(index, channels_[index].output.value());
 		}
 
-		for(size_t index = 0; index < channels_.size(); ++index)
-		{
-			PinInterfece::transfer(~((output_value << 8) | 1<<index));
+		PinInterfece::pull_low(Pin(SELECT_PIN));
 
-			PinInterfece::pull_high(Pin(SELECT_PIN));
-			delay(1);
-			PinInterfece::pull_low(Pin(SELECT_PIN));
-
-			uint16_t first = PinInterfece::transfer(0);
-			uint16_t second = PinInterfece::transfer(0);
-
-			channels_[index].sensor.process(first, second);
-		}
+		for(uint8_t i = 0; i < io_buffer.units(); i = i + 2)
+    	{
+    		io_buffer.recv[i] = PinInterfece::transfer(io_buffer.send[i]);
+    		delay(100);
+    		io_buffer.recv[i+1] = PinInterfece::transfer(io_buffer.send[i+1]);
+    		delay(100);
+    		channels_[i].sensor.process(
+    			io_buffer.recv[i],
+    			io_buffer.recv[i+1]);
+	    }
+		PinInterfece::pull_high(Pin(SELECT_PIN));
 
 		if(std::chrono::steady_clock::now() >= blink_deadline_)
 		{
 			blink_deadline_ = std::chrono::steady_clock::now() + 2s;
 			PinInterfece::toggle(Pin(2));
 
-			// uint8_t channel_counter = 0;
-			// for(auto & channel : channels_)
-			// {
-			// 	Serial.print("Outputs: ");
-			// 	Serial.println(output_value, HEX);
+			uint8_t channel_counter = 0;
+			for(auto & channel : channels_)
+			{
+				Serial.print("Outputs: ");
+				Serial.println(output_value, HEX);
 
-			// 	Serial.print("sensor[");
-			// 	Serial.print(channel_counter++);
-			// 	Serial.print("]: ");
-			// 	if(channel.sensor.has_open_connection())
-			// 	{
-			// 		Serial.println("open connection");
-			// 	}
-			// 	else if(channel.sensor.has_short_to_gnd())
-			// 	{
-			// 		Serial.println("short to GND");
-			// 	}
-			// 	else if(channel.sensor.has_short_to_vcc())
-			// 	{
-			// 		Serial.println("short to vcc");
-			// 	}
-			// 	else
-			// 	{
-			// 		Serial.print("temp: ");
-			// 		Serial.print(channel.sensor.hot_end_temperature());
-			// 		Serial.print("°C, (");
-			// 		Serial.print(channel.sensor.internal_temperatur());
-			// 		Serial.println("°C)");
-			// 	}
-			// }
+				Serial.print("sensor[");
+				Serial.print(channel_counter++);
+				Serial.print("]: ");
+				if(channel.sensor.has_open_connection())
+				{
+					Serial.println("open connection");
+				}
+				else if(channel.sensor.has_short_to_gnd())
+				{
+					Serial.println("short to GND");
+				}
+				else if(channel.sensor.has_short_to_vcc())
+				{
+					Serial.println("short to vcc");
+				}
+				else
+				{
+					Serial.print("temp: ");
+					Serial.print(channel.sensor.hot_end_temperature());
+					Serial.print("°C, (");
+					Serial.print(channel.sensor.internal_temperatur());
+					Serial.println("°C)");
+				}
+			}
 		}
 
 		if(not automatic)
@@ -394,6 +426,7 @@ private:
 private:
 	MaxCurrent max_current_;
 	InputTpye channels_;
+	IOBuffer<ChannelCount> io_buffer;
 	std::chrono::steady_clock::time_point blink_deadline_;
 	float actual_current_ = 0.0f;
 	uint16_t output_counter_ = 1;
