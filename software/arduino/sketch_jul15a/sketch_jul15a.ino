@@ -111,7 +111,7 @@ void setup() {
 	Serial.begin(115200);
 	Serial.println("\nStart");
 	SPI.begin();
-	SPI.setClockDivider(SPI_CLOCK_DIV16);
+	SPI.setClockDivider(SPI_CLOCK_DIV128);
 
 	pinMode(0, OUTPUT);
 	digitalWrite(0, LOW);
@@ -154,31 +154,31 @@ void setup() {
 
 	sys = new System_t(
 		std::array<Channel_t, 3>{
-		Channel_t{
-			thermo::LowerTemp(190.0f),
-			thermo::UpperTemp(200.0f),
-			Sensor_t(),
-			Output_t(thermo::Pin(0), thermo::MaxCurrent(30.0f))},
-		Channel_t{
-			thermo::LowerTemp(190.0f),
-			thermo::UpperTemp(200.0f),
-			Sensor_t(),
-			Output_t(thermo::Pin(1), thermo::MaxCurrent(30.0f))},
-		Channel_t{
-			thermo::LowerTemp(190.0f),
-			thermo::UpperTemp(200.0f),
-			Sensor_t(),
-			Output_t(thermo::Pin(2), thermo::MaxCurrent(30.0f))},
-		/*Channel_t{
-			thermo::LowerTemp(190.0f),
-			thermo::UpperTemp(200.0f),
-			Sensor_t(),
-			Output_t(thermo::Pin(3), thermo::MaxCurrent(30.0f))}*/},
+			Channel_t{
+				thermo::LowerTemp(190.0f),
+				thermo::UpperTemp(200.0f),
+				Sensor_t(),
+				Output_t(thermo::Pin(0), thermo::MaxCurrent(30.0f))},
+			Channel_t{
+				thermo::LowerTemp(190.0f),
+				thermo::UpperTemp(200.0f),
+				Sensor_t(),
+				Output_t(thermo::Pin(1), thermo::MaxCurrent(30.0f))},
+			Channel_t{
+				thermo::LowerTemp(190.0f),
+				thermo::UpperTemp(200.0f),
+				Sensor_t(),
+				Output_t(thermo::Pin(2), thermo::MaxCurrent(30.0f))}
+			/*Channel_t{
+				thermo::LowerTemp(190.0f),
+				thermo::UpperTemp(200.0f),
+				Sensor_t(),
+				Output_t(thermo::Pin(3), thermo::MaxCurrent(30.0f))}*/},
 		thermo::MaxCurrent(30.0f));
 }
 
 void loop()
 {
 	sys->process();
-	digitalWrite(0, HIGH);
+	//digitalWrite(0, HIGH);
 }
