@@ -1,0 +1,440 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<export version="E">
+  <design>
+    <source>/home/robert/workspace/ThermoControl/board/brain_board/brain_board.kicad_sch</source>
+    <date>Sa 09 Okt 2021 19:26:59 CEST</date>
+    <tool>Eeschema 5.99.0-unknown-b1c67d9ad4~109~ubuntu20.04.1</tool>
+    <sheet number="1" name="/" tstamps="/">
+      <title_block>
+        <title/>
+        <company/>
+        <rev/>
+        <date/>
+        <source>brain_board.kicad_sch</source>
+        <comment number="1" value=""/>
+        <comment number="2" value=""/>
+        <comment number="3" value=""/>
+        <comment number="4" value=""/>
+        <comment number="5" value=""/>
+        <comment number="6" value=""/>
+        <comment number="7" value=""/>
+        <comment number="8" value=""/>
+        <comment number="9" value=""/>
+      </title_block>
+    </sheet>
+  </design>
+  <components>
+    <comp ref="C1">
+      <value>470uF</value>
+      <footprint>Capacitor_THT:CP_Radial_D8.0mm_P3.50mm</footprint>
+      <datasheet>https://datasheet.lcsc.com/lcsc/2105171209_Man-Yue-Tech-ULR477M1CF08RR_C840136.pdf</datasheet>
+      <fields>
+        <field name="LCSC Part#">C840136</field>
+      </fields>
+      <libsource lib="Device" part="C_Polarized_Small" description="Polarized capacitor, small symbol"/>
+      <property name="LCSC Part#" value="C840136"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="brain_board.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>535e7a01-4cda-4662-b434-cfc58bd6b027</tstamps>
+    </comp>
+    <comp ref="C2">
+      <value>1uF</value>
+      <footprint>Capacitor_THT:C_Disc_D4.3mm_W1.9mm_P5.00mm</footprint>
+      <datasheet>https://datasheet.lcsc.com/lcsc/2003031431_AVX-SR305C105KARTR1_C444742.pdf</datasheet>
+      <fields>
+        <field name="LCSC Part#">C444742</field>
+      </fields>
+      <libsource lib="Device" part="C_Small" description="Unpolarized capacitor, small symbol"/>
+      <property name="LCSC Part#" value="C444742"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="brain_board.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>42f47601-c933-441a-aab5-fbec539d2791</tstamps>
+    </comp>
+    <comp ref="F1">
+      <value>1A slow</value>
+      <footprint>phase_angle_control:Fuse_2410</footprint>
+      <datasheet>https://datasheet.lcsc.com/lcsc/1809211427_Shenzhen-JDT-Fuse-JFC2410-1100TS_C136380.pdf</datasheet>
+      <fields>
+        <field name="LCSC Part#">C136380</field>
+      </fields>
+      <libsource lib="Device" part="Fuse" description="Fuse"/>
+      <property name="LCSC Part#" value="C136380"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="brain_board.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>ed517eaa-8062-414f-89a0-0f5b65b9356f</tstamps>
+    </comp>
+    <comp ref="J1">
+      <value>Screw_Terminal_01x03</value>
+      <footprint>pac:KF206B-7.5-3P</footprint>
+      <fields>
+        <field name="LCSC Part#">C475240</field>
+      </fields>
+      <libsource lib="Connector" part="Screw_Terminal_01x03" description="Generic screw terminal, single row, 01x03, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="LCSC Part#" value="C475240"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="brain_board.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>f2275004-8fcf-40a2-987c-89baec04c0dd</tstamps>
+    </comp>
+    <comp ref="J2">
+      <value>Conn_02x04_Odd_Even</value>
+      <footprint>Connector_PinHeader_2.54mm:PinHeader_2x04_P2.54mm_Horizontal</footprint>
+      <fields>
+        <field name="Comment">SPI_IN</field>
+        <field name="LCSC Part#">C358706</field>
+      </fields>
+      <libsource lib="Connector_Generic" part="Conn_02x04_Odd_Even" description="Generic connector, double row, 02x04, odd/even pin numbering scheme (row 1 odd numbers, row 2 even numbers), script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="Comment" value="SPI_IN"/>
+      <property name="LCSC Part#" value="C358706"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="brain_board.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>6e4d8bbd-a743-4230-be6e-077d396fcf4d</tstamps>
+    </comp>
+    <comp ref="J3">
+      <value>Micro_SD_Card</value>
+      <footprint>phase_angle_control:micro_sd_slot</footprint>
+      <datasheet>http://katalog.we-online.de/em/datasheet/693072010801.pdf</datasheet>
+      <fields>
+        <field name="LCSC Part#">C341095</field>
+      </fields>
+      <libsource lib="Connector" part="Micro_SD_Card" description="Micro SD Card Socket"/>
+      <property name="LCSC Part#" value="C341095"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="brain_board.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>6a6cf29c-8312-43fc-953e-4d7ac8a2e10c</tstamps>
+    </comp>
+    <comp ref="M1">
+      <value>MountingHoles</value>
+      <footprint>pac:MountingHolesPE</footprint>
+      <libsource lib="phase_angle_control" part="MountingHoles" description=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="brain_board.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>354a85bc-0eb4-4897-918c-2412f0e5e1b2</tstamps>
+    </comp>
+    <comp ref="PS1">
+      <value>TAD3-0303-WEDI</value>
+      <footprint>phase_angle_control:TAD3-0303-WEDI</footprint>
+      <datasheet>https://datasheet.lcsc.com/lcsc/2009071035_TDPOWER-TAD3-0303-WEDI_C695893.pdf</datasheet>
+      <fields>
+        <field name="LCSC Part#">C695893</field>
+      </fields>
+      <libsource lib="phase_angle_control" part="TAD3-0303-WEDI" description=""/>
+      <property name="LCSC Part#" value="C695893"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="brain_board.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>eee51e1a-e165-417b-a331-54154ae9fdce</tstamps>
+    </comp>
+    <comp ref="U1">
+      <value>WeMos_D1_mini</value>
+      <footprint>Module:WEMOS_D1_mini_light</footprint>
+      <datasheet>https://wiki.wemos.cc/products:d1:d1_mini#documentation</datasheet>
+      <libsource lib="MCU_Module" part="WeMos_D1_mini" description="32-bit microcontroller module with WiFi"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="brain_board.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>f4c0ff89-3527-43d8-96ec-42c6b192926c</tstamps>
+    </comp>
+  </components>
+  <libparts>
+    <libpart lib="Connector" part="Micro_SD_Card">
+      <description>Micro SD Card Socket</description>
+      <docs>http://katalog.we-online.de/em/datasheet/693072010801.pdf</docs>
+      <footprints>
+        <fp>microSD*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">J</field>
+        <field name="Value">Micro_SD_Card</field>
+        <field name="Datasheet">http://katalog.we-online.de/em/datasheet/693072010801.pdf</field>
+      </fields>
+      <pins>
+        <pin num="1" name="DAT2" type="bidirectional"/>
+        <pin num="2" name="DAT3/CD" type="bidirectional"/>
+        <pin num="3" name="CMD" type="input"/>
+        <pin num="4" name="VDD" type="power_in"/>
+        <pin num="5" name="CLK" type="input"/>
+        <pin num="6" name="VSS" type="power_in"/>
+        <pin num="7" name="DAT0" type="bidirectional"/>
+        <pin num="8" name="DAT1" type="bidirectional"/>
+        <pin num="9" name="SHIELD" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Connector" part="Screw_Terminal_01x03">
+      <description>Generic screw terminal, single row, 01x03, script generated (kicad-library-utils/schlib/autogen/connector/)</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>TerminalBlock*:*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">J</field>
+        <field name="Value">Screw_Terminal_01x03</field>
+        <field name="Datasheet">~</field>
+      </fields>
+      <pins>
+        <pin num="1" name="Pin_1" type="passive"/>
+        <pin num="2" name="Pin_2" type="passive"/>
+        <pin num="3" name="Pin_3" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Connector_Generic" part="Conn_02x04_Odd_Even">
+      <description>Generic connector, double row, 02x04, odd/even pin numbering scheme (row 1 odd numbers, row 2 even numbers), script generated (kicad-library-utils/schlib/autogen/connector/)</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>Connector*:*_2x??_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">J</field>
+        <field name="Value">Conn_02x04_Odd_Even</field>
+        <field name="Datasheet">~</field>
+      </fields>
+      <pins>
+        <pin num="1" name="Pin_1" type="passive"/>
+        <pin num="2" name="Pin_2" type="passive"/>
+        <pin num="3" name="Pin_3" type="passive"/>
+        <pin num="4" name="Pin_4" type="passive"/>
+        <pin num="5" name="Pin_5" type="passive"/>
+        <pin num="6" name="Pin_6" type="passive"/>
+        <pin num="7" name="Pin_7" type="passive"/>
+        <pin num="8" name="Pin_8" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Device" part="C_Polarized_Small">
+      <description>Polarized capacitor, small symbol</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>CP_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">C</field>
+        <field name="Value">C_Polarized_Small</field>
+        <field name="Datasheet">~</field>
+      </fields>
+      <pins>
+        <pin num="1" name="" type="passive"/>
+        <pin num="2" name="" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Device" part="C_Small">
+      <description>Unpolarized capacitor, small symbol</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>C_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">C</field>
+        <field name="Value">C_Small</field>
+        <field name="Datasheet">~</field>
+      </fields>
+      <pins>
+        <pin num="1" name="" type="passive"/>
+        <pin num="2" name="" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Device" part="Fuse">
+      <description>Fuse</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>*Fuse*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">F</field>
+        <field name="Value">Fuse</field>
+        <field name="Datasheet">~</field>
+      </fields>
+      <pins>
+        <pin num="1" name="" type="passive"/>
+        <pin num="2" name="" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="MCU_Module" part="WeMos_D1_mini">
+      <description>32-bit microcontroller module with WiFi</description>
+      <docs>https://wiki.wemos.cc/products:d1:d1_mini#documentation</docs>
+      <footprints>
+        <fp>WEMOS*D1*mini*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">U</field>
+        <field name="Value">WeMos_D1_mini</field>
+        <field name="Footprint">Module:WEMOS_D1_mini_light</field>
+        <field name="Datasheet">https://wiki.wemos.cc/products:d1:d1_mini#documentation</field>
+      </fields>
+      <pins>
+        <pin num="1" name="~{RST}" type="input"/>
+        <pin num="2" name="A0" type="input"/>
+        <pin num="3" name="D0" type="bidirectional"/>
+        <pin num="4" name="SCK/D5" type="bidirectional"/>
+        <pin num="5" name="MISO/D6" type="bidirectional"/>
+        <pin num="6" name="MOSI/D7" type="bidirectional"/>
+        <pin num="7" name="CS/D8" type="bidirectional"/>
+        <pin num="8" name="3V3" type="power_out"/>
+        <pin num="9" name="5V" type="power_in"/>
+        <pin num="10" name="GND" type="power_in"/>
+        <pin num="11" name="D4" type="bidirectional"/>
+        <pin num="12" name="D3" type="bidirectional"/>
+        <pin num="13" name="SDA/D2" type="bidirectional"/>
+        <pin num="14" name="SCL/D1" type="bidirectional"/>
+        <pin num="15" name="RX" type="input"/>
+        <pin num="16" name="TX" type="output"/>
+      </pins>
+    </libpart>
+    <libpart lib="phase_angle_control" part="MountingHoles">
+      <fields>
+        <field name="Reference">M</field>
+        <field name="Value">MountingHoles</field>
+        <field name="Footprint">pac:MountingHolesPE</field>
+      </fields>
+      <pins>
+        <pin num="1" name="PE" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="phase_angle_control" part="TAD3-0303-WEDI">
+      <docs>https://datasheet.lcsc.com/lcsc/2009071035_TDPOWER-TAD3-0303-WEDI_C695893.pdf</docs>
+      <fields>
+        <field name="Reference">PS?</field>
+        <field name="Value">TAD3-0303-WEDI</field>
+        <field name="Footprint">phase_angle_control:TAD3-0303-WEDI</field>
+        <field name="Datasheet">https://datasheet.lcsc.com/lcsc/2009071035_TDPOWER-TAD3-0303-WEDI_C695893.pdf</field>
+        <field name="LCSC Part#">C695893</field>
+      </fields>
+      <pins>
+        <pin num="1" name="V01+" type="input"/>
+        <pin num="2" name="NC" type="no_connect"/>
+        <pin num="3" name="Vo1-" type="input"/>
+        <pin num="4" name="NC" type="no_connect"/>
+        <pin num="5" name="Vo2+" type="input"/>
+        <pin num="6" name="Vo2-" type="input"/>
+        <pin num="7" name="N" type="input"/>
+        <pin num="8" name="L" type="input"/>
+      </pins>
+    </libpart>
+  </libparts>
+  <libraries>
+    <library logical="Connector">
+      <uri>/usr/share/kicad/library//Connector.kicad_sym</uri>
+    </library>
+    <library logical="Connector_Generic">
+      <uri>/usr/share/kicad/library//Connector_Generic.kicad_sym</uri>
+    </library>
+    <library logical="Device">
+      <uri>/usr/share/kicad/library//Device.kicad_sym</uri>
+    </library>
+    <library logical="MCU_Module">
+      <uri>/usr/share/kicad/library//MCU_Module.kicad_sym</uri>
+    </library>
+    <library logical="phase_angle_control">
+      <uri>/home/robert/workspace/ThermoControl/board/phase_angle_control/phase_angle_control/phase_angle_control.kicad_sym</uri>
+    </library>
+  </libraries>
+  <nets>
+    <net code="1" name="+3V3">
+      <node ref="C1" pin="1" pintype="passive"/>
+      <node ref="C2" pin="1" pintype="passive"/>
+      <node ref="J2" pin="2" pinfunction="Pin_2" pintype="passive"/>
+      <node ref="J2" pin="6" pinfunction="Pin_6" pintype="passive"/>
+      <node ref="J3" pin="4" pinfunction="VDD" pintype="power_in"/>
+      <node ref="PS1" pin="1" pinfunction="V01+" pintype="input"/>
+      <node ref="U1" pin="8" pinfunction="3V3" pintype="power_out"/>
+    </net>
+    <net code="2" name="AC1">
+      <node ref="F1" pin="1" pintype="passive"/>
+      <node ref="J1" pin="2" pinfunction="Pin_2" pintype="passive"/>
+    </net>
+    <net code="3" name="AC2">
+      <node ref="J1" pin="3" pinfunction="Pin_3" pintype="passive"/>
+      <node ref="PS1" pin="7" pinfunction="N" pintype="input"/>
+    </net>
+    <net code="4" name="CLK">
+      <node ref="J2" pin="3" pinfunction="Pin_3" pintype="passive"/>
+      <node ref="J3" pin="5" pinfunction="CLK" pintype="input"/>
+      <node ref="U1" pin="4" pinfunction="SCK/D5" pintype="bidirectional"/>
+    </net>
+    <net code="5" name="CS">
+      <node ref="J2" pin="1" pinfunction="Pin_1" pintype="passive"/>
+      <node ref="U1" pin="11" pinfunction="D4" pintype="bidirectional"/>
+    </net>
+    <net code="6" name="GND">
+      <node ref="C1" pin="2" pintype="passive"/>
+      <node ref="C2" pin="2" pintype="passive"/>
+      <node ref="J2" pin="4" pinfunction="Pin_4" pintype="passive"/>
+      <node ref="J2" pin="8" pinfunction="Pin_8" pintype="passive"/>
+      <node ref="J3" pin="6" pinfunction="VSS" pintype="power_in"/>
+      <node ref="J3" pin="9" pinfunction="SHIELD" pintype="passive"/>
+      <node ref="PS1" pin="3" pinfunction="Vo1-" pintype="input"/>
+      <node ref="U1" pin="10" pinfunction="GND" pintype="power_in"/>
+    </net>
+    <net code="7" name="MISO">
+      <node ref="J2" pin="7" pinfunction="Pin_7" pintype="passive"/>
+      <node ref="J3" pin="7" pinfunction="DAT0" pintype="bidirectional"/>
+      <node ref="U1" pin="5" pinfunction="MISO/D6" pintype="bidirectional"/>
+    </net>
+    <net code="8" name="MOSI">
+      <node ref="J2" pin="5" pinfunction="Pin_5" pintype="passive"/>
+      <node ref="J3" pin="3" pinfunction="CMD" pintype="input"/>
+      <node ref="U1" pin="6" pinfunction="MOSI/D7" pintype="bidirectional"/>
+    </net>
+    <net code="9" name="Net-(F1-Pad2)">
+      <node ref="F1" pin="2" pintype="passive"/>
+      <node ref="PS1" pin="8" pinfunction="L" pintype="input"/>
+    </net>
+    <net code="10" name="PE">
+      <node ref="J1" pin="1" pinfunction="Pin_1" pintype="passive"/>
+      <node ref="M1" pin="1" pinfunction="PE" pintype="passive"/>
+    </net>
+    <net code="11" name="SD_CS">
+      <node ref="J3" pin="2" pinfunction="DAT3/CD" pintype="bidirectional"/>
+      <node ref="U1" pin="7" pinfunction="CS/D8" pintype="bidirectional"/>
+    </net>
+    <net code="12" name="unconnected-(J3-Pad1)">
+      <node ref="J3" pin="1" pinfunction="DAT2" pintype="bidirectional+no_connect"/>
+    </net>
+    <net code="13" name="unconnected-(J3-Pad8)">
+      <node ref="J3" pin="8" pinfunction="DAT1" pintype="bidirectional+no_connect"/>
+    </net>
+    <net code="14" name="unconnected-(PS1-Pad2)">
+      <node ref="PS1" pin="2" pinfunction="NC" pintype="no_connect"/>
+    </net>
+    <net code="15" name="unconnected-(PS1-Pad4)">
+      <node ref="PS1" pin="4" pinfunction="NC" pintype="no_connect"/>
+    </net>
+    <net code="16" name="unconnected-(PS1-Pad5)">
+      <node ref="PS1" pin="5" pinfunction="Vo2+" pintype="input+no_connect"/>
+    </net>
+    <net code="17" name="unconnected-(PS1-Pad6)">
+      <node ref="PS1" pin="6" pinfunction="Vo2-" pintype="input+no_connect"/>
+    </net>
+    <net code="18" name="unconnected-(U1-Pad1)">
+      <node ref="U1" pin="1" pinfunction="~{RST}" pintype="input+no_connect"/>
+    </net>
+    <net code="19" name="unconnected-(U1-Pad2)">
+      <node ref="U1" pin="2" pinfunction="A0" pintype="input+no_connect"/>
+    </net>
+    <net code="20" name="unconnected-(U1-Pad3)">
+      <node ref="U1" pin="3" pinfunction="D0" pintype="bidirectional+no_connect"/>
+    </net>
+    <net code="21" name="unconnected-(U1-Pad9)">
+      <node ref="U1" pin="9" pinfunction="5V" pintype="power_in+no_connect"/>
+    </net>
+    <net code="22" name="unconnected-(U1-Pad12)">
+      <node ref="U1" pin="12" pinfunction="D3" pintype="bidirectional+no_connect"/>
+    </net>
+    <net code="23" name="unconnected-(U1-Pad13)">
+      <node ref="U1" pin="13" pinfunction="SDA/D2" pintype="bidirectional+no_connect"/>
+    </net>
+    <net code="24" name="unconnected-(U1-Pad14)">
+      <node ref="U1" pin="14" pinfunction="SCL/D1" pintype="bidirectional+no_connect"/>
+    </net>
+    <net code="25" name="unconnected-(U1-Pad15)">
+      <node ref="U1" pin="15" pinfunction="RX" pintype="input+no_connect"/>
+    </net>
+    <net code="26" name="unconnected-(U1-Pad16)">
+      <node ref="U1" pin="16" pinfunction="TX" pintype="output+no_connect"/>
+    </net>
+  </nets>
+</export>
