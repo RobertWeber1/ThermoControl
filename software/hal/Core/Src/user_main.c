@@ -73,7 +73,7 @@ constexpr uint16_t cmd_identifier = 'C' << 8 | 'M';
 
 inline void process_command(uint8_t cmd)
 {
-	printf("process_command cmd: %d\n", cmd);
+	//printf("process_command cmd: %d\n", cmd);
 	switch(cmd)
 	{
 		case 0:
@@ -113,28 +113,30 @@ void print_state(thermo::Sensor const& sensor)
 void user_main()
 {
 	RetargetInit(&huart2);
-
-	HAL_GPIO_WritePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin, GPIO_PIN_RESET);
-	HAL_Delay(100);
-	HAL_GPIO_WritePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin, GPIO_PIN_SET);
-	HAL_Delay(100);
-	HAL_GPIO_WritePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin, GPIO_PIN_RESET);
-	HAL_Delay(100);
-	HAL_GPIO_WritePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin, GPIO_PIN_SET);
-	HAL_Delay(100);
-	HAL_GPIO_WritePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin, GPIO_PIN_RESET);
-	HAL_Delay(100);
+	puts("-------------------Start----------------");
 
 	HAL_GPIO_WritePin(SPI1_SEL_NEG_GPIO_Port, SPI1_SEL_NEG_Pin, GPIO_PIN_SET);
 
-	puts("-------------------Start----------------");
+	HAL_GPIO_WritePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin, GPIO_PIN_RESET);
+	HAL_Delay(100);
+	HAL_GPIO_WritePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin, GPIO_PIN_SET);
+	HAL_Delay(100);
+	HAL_GPIO_WritePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin, GPIO_PIN_RESET);
+	HAL_Delay(100);
+	HAL_GPIO_WritePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin, GPIO_PIN_SET);
+	HAL_Delay(100);
 
-	HAL_TIM_OnePulse_Start_IT(&htim1, TIM_CHANNEL_1);
+
+
+	//HAL_TIM_OnePulse_Start_IT(&htim1, TIM_CHANNEL_1);
 	thermo::Sensor sensor;
 
+	auto const start = HAL_GetTick();
 	HAL_GPIO_WritePin(SPI1_SEL_NEG_GPIO_Port, SPI1_SEL_NEG_Pin, GPIO_PIN_RESET);
 	HAL_SPI_Receive(&hspi1, reinterpret_cast<uint8_t*>(txbuf), 2, 10000);
 	HAL_GPIO_WritePin(SPI1_SEL_NEG_GPIO_Port, SPI1_SEL_NEG_Pin, GPIO_PIN_SET);
+
+	printf("transfer time: %ld ms", HAL_GetTick() - start);
 
 	sensor.process(txbuf[0], txbuf[1]);
 
@@ -142,6 +144,7 @@ void user_main()
 
 	while (1)
 	{
+//		printf("send: %04x %04x\n", txbuf[0], txbuf[1]);
 		if(HAL_SPI_TransmitReceive(
 			&hspi2,
 			reinterpret_cast<uint8_t*>(txbuf),
@@ -149,6 +152,7 @@ void user_main()
 			2,
 			0xffff) == HAL_OK)
 		{
+		//	printf("recv: %04x %04x\n", rxbuf[0], rxbuf[1]);
 			if(rxbuf[0] == 0x434d)
 			{
 				uint8_t hops = rxbuf[1] & 0x00ff;
@@ -160,9 +164,8 @@ void user_main()
 					HAL_SPI_Receive(&hspi1, reinterpret_cast<uint8_t*>(txbuf), 2, 10000);
 					HAL_GPIO_WritePin(SPI1_SEL_NEG_GPIO_Port, SPI1_SEL_NEG_Pin, GPIO_PIN_SET);
 
-					sensor.process(txbuf[0], txbuf[1]);
-
-					print_state(sensor);
+					//sensor.process(txbuf[0], txbuf[1]);
+					//print_state(sensor);
 				}
 				else
 				{

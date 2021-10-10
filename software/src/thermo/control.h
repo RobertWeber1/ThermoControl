@@ -18,33 +18,59 @@ using namespace std::chrono_literals;
 template<uint8_t ChannelCount>
 struct IOBuffer
 {
-	uint16_t send[2*ChannelCount]; //= {0x434D, 0x0003, 0x434D, 0x0002, 0x434D, 0x0001, 0x434D, 0x0000};
-  	uint16_t recv[2*ChannelCount]; //= {0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff};
+	uint16_t send[2*(ChannelCount)]; //= {0x434D, 0x0003, 0x434D, 0x0002, 0x434D, 0x0001, 0x434D, 0x0000};
+	uint16_t recv[2*(ChannelCount)]; //= {0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff};
 
-  	static uint8_t units()
-  	{
-  		return 2 * ChannelCount;
-  	}
+	static uint8_t units()
+	{
+		return 2 * (ChannelCount);
+	}
 
-  	IOBuffer()
-  	{
-  		for(uint8_t i = 0; i < ChannelCount*2; i=i+2)
-  		{
-  			send[i] = 0x434D;
-  			send[i+1] = i;
-  			recv[i] = 0xffff;
-  			recv[i+1] = 0xffff;
-  		}
-  	}
+	IOBuffer()
+	{
+		for(uint8_t i = 0; i < (ChannelCount)*2; i=i+2)
+		{
+			send[i] = 0x434D;
+			send[i+1] = i/2;
+			recv[i] = 0xffff;
+			recv[i+1] = 0xffff;
+		}
+	}
 
-  	void set_channel(uint8_t channel, uint8_t value)
-  	{
-  		size_t index = channel * 2 + 1;
-  		if(index < sizeof(send))
-  		{
-  			send[index] = (send[index] & 0x00ff) | (value << 8);
-  		}
-  	}
+	void set_channel(uint8_t channel, uint8_t value)
+	{
+		size_t index = (channel) * 2 + 1;
+		if(index < sizeof(send))
+		{
+			send[index] = (send[index] & 0x00ff) | (uint16_t(value) << 8);
+		}
+	}
+
+	void print_send() const
+	{
+		Serial.print("send: ");
+		for(size_t i=0; i<ChannelCount; ++i)
+		{
+			Serial.print(send[i*2], HEX);
+			Serial.print(" ");
+			Serial.print(send[i*2+1], HEX);
+			Serial.print(" ");
+		}
+		Serial.println("");
+	}
+
+	void print_recv() const
+	{
+		Serial.print("recv: ");
+		for(size_t i=0; i<ChannelCount; ++i)
+		{
+			Serial.print(recv[i*2], HEX);
+			Serial.print(" ");
+			Serial.print(recv[i*2+1], HEX);
+			Serial.print(" ");
+		}
+		Serial.println("");
+	}
 };
 
 
@@ -75,6 +101,7 @@ struct Control
 	: max_current_(max_current)
 	, channels_(channels)
 	, blink_deadline_(std::chrono::steady_clock::now())
+	, process_deadline_(std::chrono::steady_clock::now())
 	{
 		PinInterfece::make_output(Pin(SELECT_PIN));
 		PinInterfece::make_output(Pin(LED_PIN));
@@ -83,20 +110,20 @@ struct Control
 			StorageInterface::read(
 				"config.bin",
 				Config{
-					false,
+					true,
 					{
 						std::make_tuple(
 							channels_[0].lower_bound,
 							channels_[0].upper_bound,
-							std::chrono::seconds(1)),
+							30s),
 						std::make_tuple(
 							channels_[1].lower_bound,
 							channels_[1].upper_bound,
-							std::chrono::seconds(1)),
+							30s),
 						std::make_tuple(
 							channels_[2].lower_bound,
 							channels_[2].upper_bound,
-							std::chrono::seconds(1))}});
+							30s)}});
 
 		print(cfg);
 
@@ -141,49 +168,122 @@ struct Control
 
 	void print(Config const& cfg) const
 	{
-		printf("\tis_automatic: %d\n", cfg.is_automatic);
+		Serial.print("\tis_automatic: ");
+		Serial.println(cfg.is_automatic);
 
 		for(size_t i = 0; i < cfg.bounds.size(); ++i)
 		{
-			printf(
-				"\t%d: lower: %lf, upper: %lf, on_time: %ld\n",
-				i,
-				std::get<0>(cfg.bounds[i]).get(),
-				std::get<1>(cfg.bounds[i]).get(),
-				static_cast<long int>(std::get<2>(cfg.bounds[i]).count()));
+			Serial.print(i);
+			Serial.print(": lower: ");
+			Serial.print(std::get<0>(cfg.bounds[i]).get());
+			Serial.print(", upper: ");
+			Serial.print(std::get<1>(cfg.bounds[i]).get());
+			Serial.print(", on_time: ");
+			Serial.println(std::get<2>(cfg.bounds[i]).count());
 		}
 	}
 
 	void update_config()
 	{
-		puts("update_config");
+		Serial.println("update_config");
 		auto const cfg = Config{automatic, get_bounds()};
 		StorageInterface::write("config.bin", cfg);
 		print(cfg);
 	}
 
-	void process()
+	bool is_valid(uint16_t data) const
 	{
-		uint16_t output_value = 0;
-
-		for(size_t index = 0; index < channels_.size(); ++index)
+		if(data == 0 or data == 0xffff or data == 0x8a51)
 		{
-			io_buffer.set_channel(index, channels_[index].output.value());
+			return false;
 		}
 
-		PinInterfece::pull_low(Pin(SELECT_PIN));
+		return true;
+	}
 
+	bool buffer_invalid() const
+	{
 		for(uint8_t i = 0; i < io_buffer.units(); i = i + 2)
-    	{
-    		io_buffer.recv[i] = PinInterfece::transfer(io_buffer.send[i]);
-    		delay(100);
-    		io_buffer.recv[i+1] = PinInterfece::transfer(io_buffer.send[i+1]);
-    		delay(100);
-    		channels_[i].sensor.process(
-    			io_buffer.recv[i],
-    			io_buffer.recv[i+1]);
-	    }
-		PinInterfece::pull_high(Pin(SELECT_PIN));
+		{
+			if(not is_valid(io_buffer.recv[i]))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	void process()
+	{
+
+		if(not initialized_)
+		{
+			PinInterfece::pull_low(Pin(SELECT_PIN));
+			PinInterfece::pull_low(Pin(2));
+			delay(100);
+			Serial.print("sync spi chain");
+			while(PinInterfece::transfer(0x8a51) != 0x8a51)
+			{
+				// delay(100);
+				Serial.print(".");
+			}
+			Serial.println("");
+
+			PinInterfece::pull_high(Pin(SELECT_PIN));
+			PinInterfece::pull_high(Pin(2));
+			initialized_ = true;
+		}
+
+		auto const now = std::chrono::steady_clock::now();
+
+		if(now > process_deadline_)
+		{
+			Serial.println("process");
+
+			for(size_t index = 0; index < channels_.size(); ++index)
+			{
+				io_buffer.set_channel(index, channels_[index].output.value());
+			}
+
+
+			do
+			{
+				io_buffer.print_send();
+				PinInterfece::pull_low(Pin(SELECT_PIN));
+				PinInterfece::pull_low(Pin(2));
+				delay(100);
+				for(uint8_t i = 0; i < io_buffer.units(); i = i + 2)
+				{
+					io_buffer.recv[i] = PinInterfece::transfer(io_buffer.send[i]);
+					io_buffer.recv[i+1] = PinInterfece::transfer(io_buffer.send[i+1]);
+					delay(500);
+
+					Serial.print(i);
+					Serial.print(": ");
+					Serial.print(io_buffer.recv[i], HEX);
+					Serial.print(", ");
+					Serial.println(io_buffer.recv[i+1], HEX);
+				}
+				PinInterfece::pull_high(Pin(SELECT_PIN));
+				PinInterfece::pull_high(Pin(2));
+				delay(100);
+			}
+			while(buffer_invalid());
+
+			io_buffer.print_recv();
+
+			for(uint8_t i = 0; i < io_buffer.units(); i = i + 2)
+			{
+				if(is_valid(io_buffer.recv[i]) and is_valid(io_buffer.recv[i+1]))
+				{
+					channels_[i/2].sensor.process(
+						io_buffer.recv[i],
+						io_buffer.recv[i+1]);
+				}
+			}
+			process_deadline_ = now + 1000ms;
+		}
 
 		if(std::chrono::steady_clock::now() >= blink_deadline_)
 		{
@@ -193,9 +293,6 @@ struct Control
 			uint8_t channel_counter = 0;
 			for(auto & channel : channels_)
 			{
-				Serial.print("Outputs: ");
-				Serial.println(output_value, HEX);
-
 				Serial.print("sensor[");
 				Serial.print(channel_counter++);
 				Serial.print("]: ");
@@ -428,9 +525,11 @@ private:
 	InputTpye channels_;
 	IOBuffer<ChannelCount> io_buffer;
 	std::chrono::steady_clock::time_point blink_deadline_;
+	std::chrono::steady_clock::time_point process_deadline_;
 	float actual_current_ = 0.0f;
 	uint16_t output_counter_ = 1;
 	bool automatic = false;
+	bool initialized_ = false;
 };
 
 
