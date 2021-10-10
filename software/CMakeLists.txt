@@ -27,6 +27,7 @@ FetchContent_MakeAvailable(web_ui)
 add_executable(test-ThermoControl
 	test/catch.cc
 	test/sensor.cc
+	test/spi_bus.cc
 )
 
 target_include_directories(test-ThermoControl
@@ -35,5 +36,12 @@ target_include_directories(test-ThermoControl
 
 target_link_libraries(test-ThermoControl
 	PRIVATE Catch2::Catch2
-	PRIVATE web_ui
+	# PRIVATE web_ui
 )
+
+target_compile_options(test-ThermoControl
+	PRIVATE -std=c++17
+	PRIVATE -Wextra
+	PRIVATE -Wall
+	PRIVATE -Wpedantic
+	)

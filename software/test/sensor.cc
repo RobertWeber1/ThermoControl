@@ -92,22 +92,22 @@ struct SpiInterface
 
 TEST_CASE("sensor")
 {
-	using P2flase = PinInterface<2, false>;
-	P2flase::clear_results();
+	// using P2flase = PinInterface<2, false>;
+	// P2flase::clear_results();
 
-	thermo::Sensor<P2flase, SpiInterface> sensor(thermo::Pin(2));
+	// thermo::Sensor<P2flase, SpiInterface> sensor(thermo::Pin(2));
 
-	SECTION("select pin setup")
-	{
-		REQUIRE(P2flase::get_result() == "make_output");
-		REQUIRE(P2flase::get_result() == "pull_high");
-	}
+	// SECTION("select pin setup")
+	// {
+	// 	REQUIRE(P2flase::get_result() == "make_output");
+	// 	REQUIRE(P2flase::get_result() == "pull_high");
+	// }
 
-	SECTION("process")
-	{
-		P2flase::clear_results();
-		sensor.process();
-		REQUIRE(P2flase::get_result() == "pull_low");
-		REQUIRE(P2flase::get_result() == "pull_high");
-	}
+	// SECTION("process")
+	// {
+	// 	P2flase::clear_results();
+	// 	sensor.process();
+	// 	REQUIRE(P2flase::get_result() == "pull_low");
+	// 	REQUIRE(P2flase::get_result() == "pull_high");
+	// }
 }
