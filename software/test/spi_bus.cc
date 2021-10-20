@@ -6,331 +6,13 @@
 #include <iostream>
 #include <iomanip>
 #include <type_traits>
+#include <tuple>
+#include <iostream>
+#include <array>
+#include <utility>
+#include <spi/transaction.h>
+#include <spi/bus.h>
 
-namespace spi
-{
-
-enum class FailReason
-{
-	Aborted,
-	Timeout
-};
-
-
-template<class SizeType, class InputTuple, class OutputTuple>
-struct Transaction
-{
-	using size_type = SizeType;
-
-	static constexpr size_t size()
-	{
-		auto const io_size = std::max(sizeof(InputTuple), sizeof(OutputTuple));
-
-		return
-			sizeof(SizeType) *
-			(io_size / sizeof(SizeType) +
-				((io_size % sizeof(SizeType) == 0) ? 0 : 1));
-	}
-
-	static constexpr size_t step_count()
-	{
-		auto const io_size = std::max(sizeof(InputTuple), sizeof(OutputTuple));
-
-		return
-			(io_size / sizeof(SizeType) +
-				((io_size % sizeof(SizeType) == 0) ? 0 : 1));
-	}
-
-	bool is_busy() const
-	{
-		// std::cout << "index: " << index_ << ", step_count: " << step_count() << std::endl;
-		return index_ != step_count();
-	}
-
-	bool start(
-		InputTuple const& input,
-		std::function<void(OutputTuple const&)> on_success,
-		std::function<void(FailReason)> on_fail)
-	{
-		if(index_ != step_count())
-		{
-			return false;
-		}
-
-		std::memset(as<uint8_t>(), 0, size());
-
-		*as<InputTuple>() = input;
-
-		// std::cout << "as<InputTuple>() ptr = " << (void*)as<InputTuple>() << std::endl;
-		// std::cout << "start: InputTuple<0> = " << std::hex <<(uint64_t)std::get<0>(*as<InputTuple>()) << std::dec << std::endl;
-
-		index_ = 0;
-		on_success_ = std::move(on_success);
-		on_fail_ = std::move(on_fail);
-		return true;
-	}
-
-	void abort()
-	{
-		index_ = step_count();
-		on_fail_(FailReason::Aborted);
-	}
-
-	void process_spi_data(size_type src)
-	{
-		if(index_ == step_count())
-		{
-			return;
-		}
-
-		as<SizeType>()[index_] = src;
-		index_++;
-
-		if(index_ == step_count())
-		{
-			on_success_(*as<OutputTuple>());
-		}
-	}
-
-	size_type get_spi_data() const
-	{
-		if(index_ == step_count())
-		{
-			return 0;
-		}
-		// std::cout << "as<InputTuple>() ptr = " << (void*)as<SizeType>() << std::endl;
-
-		// std::cout << "transaction get_spi_data("<< index_ <<"): " << std::hex << as<SizeType>()[index_] << std::endl;
-		return as<SizeType>()[index_];
-	}
-
-private:
-	using storage_t =
-		typename std::aligned_storage<
-			size(),
-			std::max(
-				alignof(InputTuple),
-				std::max(
-					alignof(OutputTuple),
-					alignof(SizeType)))>::type;
-
-	template<class T>
-	T* as()
-	{
-		return reinterpret_cast<T*>(&storage_);
-	}
-
-	template<class T>
-	T const* as() const
-	{
-		return reinterpret_cast<T const*>(&storage_);
-	}
-
-	std::function<void(OutputTuple const&)> on_success_;
-	std::function<void(FailReason)> on_fail_;
-	storage_t storage_;
-	size_t index_ = step_count();
-};
-
-template<class SizeType, class MasterData, class DeviceData>
-struct BaseTransaction
-{
-	using size_type = SizeType;
-	using master_data = MasterData;
-	using device_data = DeviceData;
-};
-
-template<class Base>
-struct MakeMasterTransaction
-{
-	using type = Transaction<
-		typename Base::size_type,
-		typename Base::master_data,
-		typename Base::device_data>;
-};
-
-template<class Base>
-using make_master_transaction_t = typename MakeMasterTransaction<Base>::type;
-
-
-template<class Base>
-struct MakeDeviceTransaction
-{
-	using type = Transaction<
-		typename Base::size_type,
-		typename Base::device_data,
-		typename Base::master_data>;
-};
-
-template<class Base>
-using make_device_transaction_t = typename MakeDeviceTransaction<Base>::type;
-
-
-//----------------------------------------------------------------------------//
-
-
-struct Device
-{
-
-uint16_t hot_end_temp;
-uint16_t internal_temp;
-enum State : uint8_t
-{
-	Ok,
-	OpenConnection,
-	ShortToGND,
-	ShortToVCC
-}state;
-bool output_state;
-
-};
-
-
-template<class ... Units>
-struct Bus
-{
-	using Units_t = std::tuple<Units&...>;
-	using Units_t_no_ref = std::tuple<Units...>;
-
-	Bus(Units& ... units)
-	: units_(units...)
-	{}
-
-	void fill_output_buffer()
-	{
-		fill_output_buffer(std::make_index_sequence<sizeof...(Units)>{});
-	}
-
-	void consume_input_buffer()
-	{
-		consume_input_buffer(std::make_index_sequence<sizeof...(Units)>{});
-	}
-
-	uint8_t * tx_buffer()
-	{
-		return tx_buffer_;
-	}
-
-	uint8_t * rx_buffer()
-	{
-		return rx_buffer_;
-	}
-
-	template<class T>
-	T get_tx_buffer_as(size_t index)
-	{
-		T dst;
-		std::memcpy(&dst, &tx_buffer_[index], sizeof(T));
-		return dst;
-	}
-
-	template<class T>
-	T get_rx_buffer_as(size_t index)
-	{
-		T dst;
-		std::memcpy(&dst, &rx_buffer_[index], sizeof(T));
-		return dst;
-	}
-
-	static constexpr size_t buffer_size()
-	{
-		return (0 + ... + sizeof(typename Units::size_type));
-	}
-
-	static constexpr size_t tx_index_of(size_t i)
-	{
-		return calc_index_of_unit(i, std::make_index_sequence<sizeof ...(Units)>{});
-	}
-
-	static constexpr size_t rx_index_of(size_t i)
-	{
-		return calc_rx_index_of_unit(i, std::make_index_sequence<sizeof ...(Units)>{});
-	}
-
-	bool is_busy() const
-	{
-		return is_busy(std::make_index_sequence<sizeof ...(Units)>{});
-	}
-
-private:
-	template<class T>
-	void copy_from(size_t index, T const& src)
-	{
-		std::memcpy(
-			&tx_buffer_[index],
-			&src,
-			sizeof(T));
-	}
-
-	template<class T>
-	T copy_to(size_t index)
-	{
-		T dst;
-		std::memcpy(
-			&dst,
-			&rx_buffer_[index],
-			sizeof(T));
-		return dst;
-	}
-
-	template<size_t ... Is>
-	void fill_output_buffer(std::index_sequence<Is...>)
-	{
-		(copy_from(tx_index_of(Is), std::get<Is>(units_).get_spi_data()),...);
-	}
-
-	template<size_t ... Is>
-	void consume_input_buffer(std::index_sequence<Is...>)
-	{
-		(std::get<Is>(units_).process_spi_data(
-			copy_to<typename Units::size_type>(rx_index_of(Is))), ...);
-	}
-
-	template<size_t ... Is>
-	static constexpr size_t calc_index_of_unit(size_t i, std::index_sequence<Is...>)
-	{
-		return ((width_in_byte<Units>()*(Is<i?1:0)) + ... );
-	}
-
-	template<size_t ... Is>
-	static constexpr size_t calc_rx_index_of_unit(size_t i, std::index_sequence<Is...>)
-	{
-		return buffer_size() - ((width_in_byte<Units>()*(Is<=i?1:0)) + ... );
-	}
-
-	template<class T>
-	T & as_unit()
-	{
-		return static_cast<T&>(*this);
-	}
-
-	template<class T>
-	static constexpr size_t width_in_byte()
-	{
-		return sizeof(typename T::size_type);
-	}
-
-	template<size_t ... Is>
-	bool is_busy(std::index_sequence<Is...>) const
-	{
-		return (std::get<Is>(units_).is_busy() or ...);
-	}
-
-private:
-	uint8_t rx_buffer_[buffer_size()];
-	uint8_t tx_buffer_[buffer_size()];
-	Units_t units_;
-};
-
-template<class ... Args>
-Bus<Args...> make_bus(Args& ... args)
-{
-	return Bus<Args...>(args...);
-}
-
-} //namespace spi
-
-//------------------------------------------------------------------------------
 
 struct TestUnit1
 {
@@ -500,38 +182,33 @@ TEST_CASE("get bytes from tranaction")
 	REQUIRE_FALSE(in.is_busy());
 	REQUIRE_FALSE(out.is_busy());
 
-	// puts("start in");
 	REQUIRE(in.start(
-		std::make_tuple(true, int(0x11223344), 456.78f),
-		[](std::tuple<uint8_t> const& data)
+		[](uint8_t a)
 		{
-			// puts("in success");
-			REQUIRE(std::get<0>(data) == 0xff);
+			REQUIRE(a == 0xff);
 		},
-		[](spi::FailReason)
-		{}));
+		[](spi::FailReason){},
+		true, int(0x11223344), 456.78f));
 
-	// puts("start out");
 	REQUIRE(out.start(
-		std::make_tuple(uint8_t(0xff)),
-		[](std::tuple<bool, int, float> const& data)
+		[](bool a, int b, float c)
 		{
-			// puts("out success");
-			REQUIRE(std::get<0>(data) == true);
-			REQUIRE(std::get<1>(data) == 0x11223344);
-			REQUIRE(std::get<2>(data) == 456.78f);
+			REQUIRE(a == true);
+			REQUIRE(b == 0x11223344);
+			REQUIRE(c == 456.78f);
 		},
-		[](spi::FailReason)
-		{}));
+		[](spi::FailReason){},
+		uint8_t(0xff)));
+
 
 	for(size_t i = 0; i<in.step_count(); ++i)
 	{
-		// printf("step: %d\n", i);
+		REQUIRE(in.required_steps() == in.step_count() - i);
+
 		auto const tmp = out.get_spi_data();
 		out.process_spi_data(in.get_spi_data());
 		in.process_spi_data(tmp);
 	}
-
 }
 
 TEST_CASE("Use Transaction and Bus")
@@ -552,65 +229,98 @@ TEST_CASE("Use Transaction and Bus")
 	spi::make_device_transaction_t<T1> d1;
 	spi::make_device_transaction_t<T2> d2;
 
-	// spi::Transaction<
-	// 	uint16_t,
-	// 	std::tuple<bool, int, float>,
-	// 	std::tuple<uint8_t>> t1;
-
-	// spi::Transaction<
-	// 	uint16_t,
-	// 	std::tuple<uint8_t>,
-	// 	std::tuple<bool>> t2;
-
 	auto bus = spi::make_bus(m1, m2);
 	auto dev1 = spi::make_bus(d1);
 	auto dev2 = spi::make_bus(d2);
 
-	SECTION("not busy before start of tranaction")
-	{
-		REQUIRE_FALSE(bus.is_busy());
-	}
 
 	bool t1_succeeded = false;
 	bool t1_failed = false;
-	REQUIRE(m1.start(
-		std::make_tuple(true, 0x11223344, 456.78f),
-		[&t1_succeeded](std::tuple<uint8_t> const&)
+	m1.start(
+		[&t1_succeeded](uint8_t a)
 		{
 			t1_succeeded = true;
+			REQUIRE(a == 32);
 		},
 		[&t1_failed](spi::FailReason)
 		{
 			t1_failed = true;
-		}));
+		},
+		true, 0x11223344, 456.78f);
 
-	SECTION("busy after first start of tranaction")
-	{
-		REQUIRE(bus.is_busy());
-	}
+	bool t3_succeeded = false;
+	bool t3_failed = false;
+	d1.start(
+		[&t3_succeeded](bool a, int b, float c)
+		{
+			t3_succeeded = true;
+			REQUIRE(a == true);
+			REQUIRE(b == 0x11223344);
+			REQUIRE(c == 456.78f);
+		},
+		[&t3_failed](spi::FailReason)
+		{
+			t3_failed = true;
+		},
+		uint8_t(32));
+
+
 
 	bool t2_succeeded = false;
 	bool t2_failed = false;
-	REQUIRE(m2.start(
-		std::make_tuple(uint8_t(5)),
-		[&t2_succeeded](std::tuple<bool> const&)
+	m2.start(
+		[&t2_succeeded](bool a)
 		{
 			t2_succeeded = true;
+			REQUIRE(a == false);
 		},
 		[&t2_failed](spi::FailReason)
 		{
 			t2_failed = true;
-		}));
+		},
+		uint8_t(5));
 
-	SECTION("still busy")
-	{
-		REQUIRE(bus.is_busy());
-	}
+	bool t4_succeeded = false;
+	bool t4_failed = false;
+	d2.start(
+		[&t4_succeeded](uint8_t a)
+		{
+			t4_succeeded = true;
+			REQUIRE(a == 5);
+		},
+		[&t4_failed](spi::FailReason)
+		{
+			t4_failed = true;
+		},
+		false);
 
-	SECTION("get accumulated buffer size")
+	SECTION("successful transaction")
 	{
+		REQUIRE(bus.required_steps() == 6);
 		REQUIRE(bus.buffer_size() == 4);
+
+
+		auto const step_count = bus.required_steps();
+		for(size_t i = 0; i<step_count; ++i)
+		{
+			bus.fill_output_buffer();
+			dev1.fill_output_buffer();
+			dev2.fill_output_buffer();
+
+			std::memcpy(dev1.rx_buffer(), bus.tx_buffer(), bus.buffer_size()/2);
+			std::memcpy(dev2.rx_buffer(), bus.tx_buffer()+bus.buffer_size()/2, bus.buffer_size()/2);
+
+			std::memcpy(bus.rx_buffer(), dev2.tx_buffer(), dev2.buffer_size());
+			std::memcpy(bus.rx_buffer()+dev2.buffer_size(), dev1.tx_buffer(), dev1.buffer_size());
+
+			bus.consume_input_buffer();
+			dev1.consume_input_buffer();
+			dev2.consume_input_buffer();
+		}
+
+		REQUIRE(t1_succeeded);
+		REQUIRE(t2_succeeded);
+		REQUIRE(t3_succeeded);
+		REQUIRE(t4_succeeded);
 	}
-
-
 }

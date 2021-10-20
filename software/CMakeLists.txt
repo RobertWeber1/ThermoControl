@@ -40,7 +40,8 @@ target_link_libraries(test-ThermoControl
 )
 
 target_compile_options(test-ThermoControl
-	PRIVATE -std=c++17
+	PUBLIC -std=c++17
+	PUBLIC -std=gnu++17
 	PRIVATE -Wextra
 	PRIVATE -Wall
 	PRIVATE -Wpedantic
