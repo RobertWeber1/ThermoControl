@@ -10,7 +10,6 @@ namespace spi
 {
 
 
-
 template<class ... Units>
 struct Bus
 {
@@ -64,12 +63,14 @@ struct Bus
 
 	static constexpr size_t tx_index_of(size_t i)
 	{
-		return calc_index_of_unit(i, std::make_index_sequence<sizeof ...(Units)>{});
+		return calc_index_of_unit(
+			i, std::make_index_sequence<sizeof ...(Units)>{});
 	}
 
 	static constexpr size_t rx_index_of(size_t i)
 	{
-		return calc_rx_index_of_unit(i, std::make_index_sequence<sizeof ...(Units)>{});
+		return calc_rx_index_of_unit(
+			i, std::make_index_sequence<sizeof ...(Units)>{});
 	}
 
 	bool is_busy() const
@@ -117,13 +118,15 @@ private:
 	}
 
 	template<size_t ... Is>
-	static constexpr size_t calc_index_of_unit(size_t i, std::index_sequence<Is...>)
+	static constexpr size_t calc_index_of_unit(
+		size_t i, std::index_sequence<Is...>)
 	{
 		return ((width_in_byte<Units>()*(Is<i?1:0)) + ... );
 	}
 
 	template<size_t ... Is>
-	static constexpr size_t calc_rx_index_of_unit(size_t i, std::index_sequence<Is...>)
+	static constexpr size_t calc_rx_index_of_unit(
+		size_t i, std::index_sequence<Is...>)
 	{
 		return buffer_size() - ((width_in_byte<Units>()*(Is<=i?1:0)) + ... );
 	}
