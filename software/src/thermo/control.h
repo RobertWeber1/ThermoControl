@@ -248,7 +248,7 @@ struct Control
 			Serial.print("sync spi chain");
 			while(PinInterfece::transfer(0x8a51) != 0x8a51)
 			{
-				// delay(100);
+				delay(10);
 				Serial.print(".");
 			}
 			Serial.println("");
@@ -262,7 +262,7 @@ struct Control
 
 		if(now > process_deadline_)
 		{
-			Serial.println("process");
+			//Serial.println("process");
 
 			for(size_t index = 0; index < channels_.size(); ++index)
 			{
@@ -272,29 +272,29 @@ struct Control
 
 			do
 			{
-				io_buffer.print_send();
+				//io_buffer.print_send();
 				PinInterfece::pull_low(Pin(SELECT_PIN));
 				PinInterfece::pull_low(Pin(2));
-				delay(100);
+				delay(10);
 				for(uint8_t i = 0; i < io_buffer.units(); i = i + 2)
 				{
 					io_buffer.recv[i] = PinInterfece::transfer(io_buffer.send[i]);
 					io_buffer.recv[i+1] = PinInterfece::transfer(io_buffer.send[i+1]);
-					delay(500);
+					delay(50);
 
-					Serial.print(i);
-					Serial.print(": ");
-					Serial.print(io_buffer.recv[i], HEX);
-					Serial.print(", ");
-					Serial.println(io_buffer.recv[i+1], HEX);
+					// Serial.print(i);
+					// Serial.print(": ");
+					// Serial.print(io_buffer.recv[i], HEX);
+					// Serial.print(", ");
+					// Serial.println(io_buffer.recv[i+1], HEX);
 				}
 				PinInterfece::pull_high(Pin(SELECT_PIN));
 				PinInterfece::pull_high(Pin(2));
-				delay(100);
+				delay(10);
 			}
 			while(buffer_invalid());
 
-			io_buffer.print_recv();
+			// io_buffer.print_recv();
 
 			for(uint8_t i = 0; i < io_buffer.units(); i = i + 2)
 			{
@@ -305,7 +305,7 @@ struct Control
 						io_buffer.recv[i+1]);
 				}
 			}
-			process_deadline_ = now + 1000ms;
+			process_deadline_ = now + 500ms;
 		}
 
 		if(std::chrono::steady_clock::now() >= blink_deadline_)
@@ -314,32 +314,32 @@ struct Control
 			PinInterfece::toggle(Pin(2));
 
 			uint8_t channel_counter = 0;
-			for(auto & channel : channels_)
-			{
-				Serial.print("sensor[");
-				Serial.print(channel_counter++);
-				Serial.print("]: ");
-				if(channel.sensor.has_open_connection())
-				{
-					Serial.println("open connection");
-				}
-				else if(channel.sensor.has_short_to_gnd())
-				{
-					Serial.println("short to GND");
-				}
-				else if(channel.sensor.has_short_to_vcc())
-				{
-					Serial.println("short to vcc");
-				}
-				else
-				{
-					Serial.print("temp: ");
-					Serial.print(channel.sensor.hot_end_temperature());
-					Serial.print("°C, (");
-					Serial.print(channel.sensor.internal_temperatur());
-					Serial.println("°C)");
-				}
-			}
+			// for(auto & channel : channels_)
+			// {
+			// 	Serial.print("sensor[");
+			// 	Serial.print(channel_counter++);
+			// 	Serial.print("]: ");
+			// 	if(channel.sensor.has_open_connection())
+			// 	{
+			// 		Serial.println("open connection");
+			// 	}
+			// 	else if(channel.sensor.has_short_to_gnd())
+			// 	{
+			// 		Serial.println("short to GND");
+			// 	}
+			// 	else if(channel.sensor.has_short_to_vcc())
+			// 	{
+			// 		Serial.println("short to vcc");
+			// 	}
+			// 	else
+			// 	{
+			// 		Serial.print("temp: ");
+			// 		Serial.print(channel.sensor.hot_end_temperature());
+			// 		Serial.print("°C, (");
+			// 		Serial.print(channel.sensor.internal_temperatur());
+			// 		Serial.println("°C)");
+			// 	}
+			// }
 		}
 
 		if(not automatic)
