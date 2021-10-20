@@ -106,24 +106,42 @@ struct Control
 		PinInterfece::make_output(Pin(SELECT_PIN));
 		PinInterfece::make_output(Pin(LED_PIN));
 
+		PinInterfece::pull_high(Pin(SELECT_PIN));
+		PinInterfece::pull_high(Pin(LED_PIN));
+
 		auto cfg =
+		// Config{
+		// 			true,
+		// 			{
+		// 				std::make_tuple(
+		// 					channels_[0].lower_bound,
+		// 					channels_[0].upper_bound,
+		// 					60s*2),
+		// 				std::make_tuple(
+		// 					channels_[1].lower_bound,
+		// 					channels_[1].upper_bound,
+		// 					60s*2),
+		// 				std::make_tuple(
+		// 					channels_[2].lower_bound,
+		// 					channels_[2].upper_bound,
+		// 					60s*2)}};
 			StorageInterface::read(
-				"config.bin",
+				"/config.bin",
 				Config{
 					true,
 					{
 						std::make_tuple(
 							channels_[0].lower_bound,
 							channels_[0].upper_bound,
-							30s),
+							10s),
 						std::make_tuple(
 							channels_[1].lower_bound,
 							channels_[1].upper_bound,
-							30s),
+							10s),
 						std::make_tuple(
 							channels_[2].lower_bound,
 							channels_[2].upper_bound,
-							30s)}});
+							10s)}});
 
 		print(cfg);
 
@@ -185,10 +203,15 @@ struct Control
 
 	void update_config()
 	{
+		PinInterfece::pull_high(Pin(SELECT_PIN));
+		PinInterfece::pull_high(Pin(LED_PIN));
+
 		Serial.println("update_config");
 		auto const cfg = Config{automatic, get_bounds()};
-		StorageInterface::write("config.bin", cfg);
-		print(cfg);
+		StorageInterface::write("/config.bin", cfg);
+
+		auto const next_cfg = StorageInterface::template read<Config>("/config.bin");
+		print(next_cfg);
 	}
 
 	bool is_valid(uint16_t data) const

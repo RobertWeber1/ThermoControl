@@ -73,20 +73,67 @@ struct StorageInterface
 			File config = SD.open(filename, FILE_READ);
 			config.read(reinterpret_cast<uint8_t *>(&default_value), sizeof(T));
 			config.close();
-			Serial.println("read config from file");
+			Serial.println("read data from file");
+		}
+		else
+		{
+			Serial.print("read - failed to open: ");
+			Serial.print(filename);
+			Serial.print(", use default value.");
 		}
 
 		return default_value;
+	}
+
+	static bool file_exists(char const* filename)
+	{
+		return SD.exists(filename);
+	}
+
+	template<class T>
+	static T read(char const* filename)
+	{
+		T data;
+		if(SD.exists(filename))
+		{
+			File config = SD.open(filename, FILE_READ);
+			config.read(reinterpret_cast<uint8_t *>(&data), sizeof(T));
+			config.close();
+			Serial.println("read data from file");
+		}
+		else
+		{
+			Serial.print("read - failed to open: ");
+			Serial.println(filename);
+		}
+
+		return data;
 	}
 
 	template<class T>
 	static void write(char const* filename, T const& value)
 	{
 		File config = SD.open(filename, FILE_WRITE);
-		config.seek(0);
-		config.write(reinterpret_cast<char const*>(&value), sizeof(T));
-		config.close();
-		Serial.println("write config to file");
+		if(config)
+		{
+			Serial.println("write config to file");
+			if(config.seek(0))
+			{
+				Serial.println("seeked to begin of file");
+			}
+			else
+			{
+				Serial.println("seeked to begin of file");
+			}
+			Serial.print(config.write(reinterpret_cast<char const*>(&value), sizeof(T)));
+			Serial.println(" bytes written;");
+			config.close();
+		}
+		else
+		{
+			Serial.print("write - failed to open: ");
+			Serial.println(filename);
+		}
 	}
 };
 
