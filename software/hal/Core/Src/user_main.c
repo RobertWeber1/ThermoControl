@@ -77,12 +77,11 @@ inline void process_command(uint8_t cmd)
 	switch(cmd)
 	{
 		case 0:
-			HAL_GPIO_WritePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin, GPIO_PIN_SET);
 			HAL_GPIO_WritePin(ENABLE_POWER_GPIO_Port, ENABLE_POWER_Pin, GPIO_PIN_RESET);
 			break;
 
 		case 1:
-			HAL_GPIO_WritePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin, GPIO_PIN_RESET);
+
 			HAL_GPIO_WritePin(ENABLE_POWER_GPIO_Port, ENABLE_POWER_Pin, GPIO_PIN_SET);
 			break;
 
@@ -110,49 +109,127 @@ void print_state(thermo::Sensor const& sensor)
 }
 
 
+template<size_t PortAddr, uint16_t Pin, bool Inverted=false>
+struct Output
+{
+	Output()
+	: toggle_deadline_(0xffff)
+	, blinking_(false)
+	{}
+
+	static void on()
+	{
+		HAL_GPIO_WritePin(port(), Pin, (Inverted?GPIO_PIN_RESET:GPIO_PIN_SET));
+	}
+
+	static void off()
+	{
+		HAL_GPIO_WritePin(port(), Pin, (Inverted?GPIO_PIN_SET:GPIO_PIN_RESET));
+	}
+
+	static void toogle()
+	{
+		HAL_GPIO_TogglePin(port(), Pin);
+	}
+
+	void process()
+	{
+		if(not blinking_)
+		{
+			return;
+		}
+
+		auto const now = HAL_GetTick();
+		if(now > toggle_deadline_)
+		{
+			puts("toggle");
+			toggle_deadline_ = now + 100;
+			toogle();
+		}
+	}
+
+	void blink_on()
+	{
+		if(not blinking_)
+		{
+			toggle_deadline_ = HAL_GetTick();
+		}
+		blinking_ = true;
+	}
+
+	void blink_off()
+	{
+		blinking_ = false;
+	}
+
+private:
+	static GPIO_TypeDef* port()
+	{
+		return reinterpret_cast<GPIO_TypeDef*>(PortAddr);
+	}
+
+	uint32_t toggle_deadline_;
+	bool blinking_;
+};
+
+Output<GPIOA_BASE, SPI1_SEL_NEG_Pin> spi1_sel;
+Output<GPIOA_BASE, STATUS_LED_Pin, true> status_led;
+Output<GPIOC_BASE, ACTIVITY_LED_Pin, true> activity_led;
+
 void user_main()
 {
 	RetargetInit(&huart2);
 	puts("-------------------Start----------------");
 
-	HAL_GPIO_WritePin(SPI1_SEL_NEG_GPIO_Port, SPI1_SEL_NEG_Pin, GPIO_PIN_SET);
+	spi1_sel.on();
 
-	HAL_GPIO_WritePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin, GPIO_PIN_RESET);
+	activity_led.on();
+	status_led.on();
 	HAL_Delay(100);
-	HAL_GPIO_WritePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin, GPIO_PIN_SET);
+	activity_led.toogle();
+	status_led.toogle();
 	HAL_Delay(100);
-	HAL_GPIO_WritePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin, GPIO_PIN_RESET);
+	activity_led.toogle();
+	status_led.toogle();
 	HAL_Delay(100);
-	HAL_GPIO_WritePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin, GPIO_PIN_SET);
-	HAL_Delay(100);
-
-
+	activity_led.toogle();
+	status_led.toogle();
 
 	//HAL_TIM_OnePulse_Start_IT(&htim1, TIM_CHANNEL_1);
 	thermo::Sensor sensor;
 
 	auto const start = HAL_GetTick();
-	HAL_GPIO_WritePin(SPI1_SEL_NEG_GPIO_Port, SPI1_SEL_NEG_Pin, GPIO_PIN_RESET);
+	spi1_sel.off();
 	HAL_SPI_Receive(&hspi1, reinterpret_cast<uint8_t*>(txbuf), 2, 10000);
-	HAL_GPIO_WritePin(SPI1_SEL_NEG_GPIO_Port, SPI1_SEL_NEG_Pin, GPIO_PIN_SET);
+	spi1_sel.on();
 
-	printf("transfer time: %ld ms", HAL_GetTick() - start);
+	printf("transfer time: %ld ms\n", HAL_GetTick() - start);
 
 	sensor.process(txbuf[0], txbuf[1]);
+	if(sensor.has_error())
+	{
+		status_led.blink_on();
+		activity_led.blink_on();
+	}
 
 	print_state(sensor);
 
 	while (1)
 	{
-//		printf("send: %04x %04x\n", txbuf[0], txbuf[1]);
-		if(HAL_SPI_TransmitReceive(
+		printf("send: %04x %04x\n", txbuf[0], txbuf[1]);
+		auto const ret = HAL_SPI_TransmitReceive(
 			&hspi2,
 			reinterpret_cast<uint8_t*>(txbuf),
 			reinterpret_cast<uint8_t*>(rxbuf),
 			2,
-			0xffff) == HAL_OK)
+			1000);
+
+		status_led.process();
+		activity_led.process();
+
+		if(ret == HAL_OK)
 		{
-		//	printf("recv: %04x %04x\n", rxbuf[0], rxbuf[1]);
+			printf("recv: %04x %04x\n", rxbuf[0], rxbuf[1]);
 			if(rxbuf[0] == 0x434d)
 			{
 				uint8_t hops = rxbuf[1] & 0x00ff;
@@ -160,12 +237,35 @@ void user_main()
 				if(hops == 0)
 				{
 					process_command(cmd);
-					HAL_GPIO_WritePin(SPI1_SEL_NEG_GPIO_Port, SPI1_SEL_NEG_Pin, GPIO_PIN_RESET);
-					HAL_SPI_Receive(&hspi1, reinterpret_cast<uint8_t*>(txbuf), 2, 10000);
-					HAL_GPIO_WritePin(SPI1_SEL_NEG_GPIO_Port, SPI1_SEL_NEG_Pin, GPIO_PIN_SET);
 
-					//sensor.process(txbuf[0], txbuf[1]);
-					//print_state(sensor);
+					spi1_sel.off();
+					HAL_SPI_Receive(&hspi1, reinterpret_cast<uint8_t*>(txbuf), 2, 1000);
+					spi1_sel.on();
+
+					sensor.process(txbuf[0], txbuf[1]);
+					if(sensor.has_error())
+					{
+						puts("blink_on");
+						status_led.blink_on();
+						activity_led.blink_on();
+					}
+					else
+					{
+						status_led.blink_off();
+						activity_led.blink_off();
+						if(cmd == 0)
+						{
+							HAL_GPIO_WritePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin, GPIO_PIN_SET);
+							HAL_GPIO_WritePin(ACTIVITY_LED_GPIO_Port, ACTIVITY_LED_Pin, GPIO_PIN_SET);
+						}
+						else
+						{
+							HAL_GPIO_WritePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin, GPIO_PIN_RESET);
+							HAL_GPIO_WritePin(ACTIVITY_LED_GPIO_Port, ACTIVITY_LED_Pin, GPIO_PIN_RESET);
+						}
+					}
+
+					print_state(sensor);
 				}
 				else
 				{
@@ -178,6 +278,11 @@ void user_main()
 				txbuf[0] = rxbuf[0];
 				txbuf[1] = rxbuf[1];
 			}
+		}
+		else
+		{
+			printf("SPI transfer error: %d\n", ret);
+			process_command(0);
 		}
 	}
 }
@@ -246,5 +351,5 @@ void SPI2_IRQHandler(void)
 void SPI1_IRQHandler(void)
 {
 
-  HAL_SPI_IRQHandler(&hspi1);
+	HAL_SPI_IRQHandler(&hspi1);
 }
