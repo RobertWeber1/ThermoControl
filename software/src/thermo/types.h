@@ -1,4 +1,5 @@
 #pragma once
+#include <chrono>
 #include "tagged_type.h"
 
 
@@ -10,5 +11,6 @@ MakeTagged(MaxCurrent, float);
 MakeTagged(UpperTemp, float);
 MakeTagged(LowerTemp, float);
 MakeTagged(FilterCoefficient, float);
+MakeTagged(MaxOnTime, std::chrono::seconds);
 
 } //namespace thermo

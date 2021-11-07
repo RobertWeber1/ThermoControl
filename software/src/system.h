@@ -80,13 +80,24 @@ struct System
 			Serial.println(bounds.c_str());
 			Serial.print("value: ");
 			Serial.println(value.c_str());
-			if(bounds.find("UPPER") != std::string::npos)
+			if(bounds.find("ONTIME") != std::string::npos)
 			{
-				Control_t::set_bound(atoi(id.c_str()), thermo::UpperTemp(atoi(value.c_str())));
+				Control_t::set_bound(
+					atoi(id.c_str()),
+					thermo::MaxOnTime(
+						std::chrono::seconds(atoi(value.c_str()))));
+			}
+			else if(bounds.find("UPPER") != std::string::npos)
+			{
+				Control_t::set_bound(
+					atoi(id.c_str()),
+					thermo::UpperTemp(atoi(value.c_str())));
 			}
 			else
 			{
-				Control_t::set_bound(atoi(id.c_str()), thermo::LowerTemp(atoi(value.c_str())));
+				Control_t::set_bound(
+					atoi(id.c_str()),
+					thermo::LowerTemp(atoi(value.c_str())));
 			}
 		}
 		//{set_max_on_time: [channelId, 123]}
@@ -112,6 +123,7 @@ struct System
 
 			if(value == "ON")
 			{
+				Serial.println("switch channel ON!!!!!");
 				Control_t::switch_channel_on(atoi(id.c_str()));
 			}
 			else
@@ -176,6 +188,11 @@ private:
 		return std::to_string(i);
 	}
 
+	static std::string str(std::chrono::seconds s)
+	{
+		return std::to_string(s.count());
+	}
+
 	void setup_gui(typename Server_t::WSClient & /*client*/)
 	{
 		Serial.println("\n\nSETUPGUI\n\n");
@@ -201,6 +218,7 @@ private:
 					enquote("upper_bound") + ":" + str(channel.upper_bound.get()) + "," +
 					enquote("temperature") + ":" + str(channel.sensor.hot_end_temperature()) + "," +
 					enquote("max_current") + ":" + str(channel.output.current()) + "," +
+					enquote("max_on_time") + ":" + str(channel.output.get_max_on_time()) + "," +
 					enquote("sensor_status") + ":" +
 						enquote(error_str(
 							channel.sensor.has_open_connection(),

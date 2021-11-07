@@ -9,7 +9,7 @@ namespace thermo
 
 struct Sensor
 {
-	Sensor(FilterCoefficient coeffitient = FilterCoefficient(0.3f))
+	Sensor(FilterCoefficient coeffitient = FilterCoefficient(0.95f))
 	: filter_hotend_(coeffitient)
 	, filter_internal_(coeffitient)
 	{}

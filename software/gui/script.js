@@ -10,8 +10,8 @@ function open_web_socket()
 		reconnect_timer = null;
 	}
 
-	connection =
-		new WebSocket("ws://192.168.4.1:8080/", ["Display"]);
+	connection = new WebSocket("ws://192.168.4.1:8080/");
+
 	var heartbeat_interval = null;
 
 	var missed_heartbeats = 0;
@@ -74,6 +74,102 @@ function disable(id)
 	document.getElementById(id).style.display = "none";
 }
 
+
+function switch_mode(enable_auto)
+{
+	if(enable_auto)
+	{
+		send_command("set_mode", "AUTO");
+	}
+	else
+	{
+		send_command("set_mode", "MANUAL");
+	}
+}
+
+function mode_switched(automatic_mode)
+{
+	const on = document.getElementById(key + "OFF");
+	const off = document.getElementById(key + "ON");
+	const upper = document.getElementById(key + "UPPER");
+	const lower = document.getElementById(key + "LOWER");
+	const on_time = document.getElementById(key + "ONTIME");
+
+	if(automatic_mode == false)
+	{
+		if(false)
+		{
+			on.style = "display:block;";
+			off.style = "display:none;";
+		}
+		else
+		{
+			on.style = "display:none;";
+			off.style = "display:block;";
+		}
+		upper.style = "display:none;";
+		lower.style = "display:none;";
+	}
+	else
+	{
+		on.style = "display:none;";
+		off.style = "display:none;";
+
+		upper.style = "display:block;";
+		lower.style = "display:block;";
+	}
+}
+
+function create_input(id, type, on_change, value)
+{
+	const input = document.createElement("input");
+	input.id = id;
+	input.classList.add("FooInput")
+	input.type = type;
+	input.step = 10;
+	input.onchange = on_change;
+	input.value = value;
+
+	return input;
+}
+
+function create_p_input(name, id, type, on_change, value)
+{
+	const para = document.createElement("p");
+	para.innerHTML = name;
+	const val = document.createElement("a");
+	val.id = "val_" + id;
+	para.append(val);
+	para.append(document.createElement("br"));
+	para.append(create_input(id, type, on_change, value));
+
+	return para;
+}
+
+function create_slider(id, left, right, on_click)
+{
+	const input = document.createElement("input");
+	input.type = "checkbox";
+	input.id = id;
+	input.onClick = on_click;
+
+	const span = document.createElement("span");
+	span.classList.add("slider");
+	span.classList.add("round");
+
+	const label = document.createElement("label");
+	label.classList.add("switch");
+	label.appendChild(input);
+	label.appendChild(span);
+
+	const div = document.createElement("div");
+	div.classList.add("switch_div");
+	div.append(left);
+	div.appendChild(label);
+	div.append(right);
+	return div;
+}
+
 function setup(count)
 {
 	console.log("setup ", count, " channels");
@@ -84,69 +180,84 @@ function setup(count)
 	for(var index = 0; index < count; index = index + 1)
 	{
 		const channel = document.createElement("div");
-		channel.className = "channel";
+		channel.classList.add("channel");
 		channel.id = index;
 
-		var off_button = document.createElement("button");
-		off_button.id = index + "OFF";
-		off_button.innerHTML = "OFF";
-		off_button.addEventListener(
-			"click",
-			function(i) {
-				return function() {send_command("switch", [i, "OFF"]); };
-			}(index));
-		channel.appendChild(off_button);
+		const identifier = document.createElement("div");
+		identifier.innerHTML = index + 1;
+		identifier.classList.add("channel_label");
 
-		var on_button = document.createElement("button");
-		on_button.id = index + "ON";
-		on_button.innerHTML = "ON";
-		on_button.addEventListener(
-			"click",
-			function(i) {
-				return function() { send_command("switch", [i, "ON"]); };
-			}(index));
-		channel.appendChild(on_button);
+		channel.appendChild(identifier);
 
-		const upper_p = document.createElement("p");
-		const upper_input = document.createElement("input");
-		upper_input.id = index + "UPPER";
-		upper_input.type = "number";
-		upper_input.onchange = send_channel_update;
-		upper_input.value = 0;
-		upper_p.innerHTML = "Obergrenze: ";
-		upper_p.append(upper_input);
-
-		const lower_p = document.createElement("p");
-		const lower_input = document.createElement("input");
-		lower_input.id = index + "LOWER";
-		lower_input.type = "number";
-		lower_input.onchange = send_channel_update;
-		lower_input.value = 0;
-		lower_p.innerHTML = "Untergrenze: ";
-		lower_p.append(lower_input);
-
-		channel.append(upper_p);
-		channel.append(lower_p);
+		var middle_div = document.createElement("div");
+		middle_div.classList.add("left");
 
 		const p_temp = document.createElement("p");
-		p_temp.append("Temperatur Sensor: ");
-
+		p_temp.append("Temperatur: ");
+		p_temp.appendChild(document.createElement("br"));
 		const temp = document.createElement("a");
+		temp.classList.add("large_text");
 		temp.id = index + "temp";
 		temp.innerHTML = "-";
 		p_temp.appendChild(temp);
-		channel.appendChild(p_temp);
+		middle_div.appendChild(p_temp);
 
 
 		const p_output = document.createElement("p");
 		p_output.append("Ausgang: ");
-
+		p_output.appendChild(document.createElement("br"));
 		const output = document.createElement("a");
 		output.id = index + "output";
 		output.innerHTML = "-";
+		output.classList.add("large_text");
 		p_output.appendChild(output);
+		p_output.appendChild(
+			create_slider(
+				index+"_switch",
+				"AUS",
+				"AN",
+				function(i) {
+					return function(event) {
+						console.log(i, event.target.checked);
+						send_command(
+							"switch",
+							[i, (event.target.checked)?"ON":"OFF"]); };
+				}(index)
+				));
 
-		channel.appendChild(p_output);
+		middle_div.appendChild(p_output);
+
+
+		channel.appendChild(middle_div);
+
+		var settings_div = document.createElement("div");
+		settings_div.classList.add("right");
+		settings_div.appendChild(
+			create_p_input(
+				"Obergrenze: ",
+				index + "UPPER",
+				"number",
+				send_channel_update,
+				0));
+
+		settings_div.appendChild(
+			create_p_input(
+				"Untergrenze: ",
+				index + "LOWER",
+				"number",
+				send_channel_update,
+				0));
+
+		settings_div.appendChild(
+			create_p_input(
+				"Anzeit: ",
+				index + "ONTIME",
+				"number",
+				send_channel_update,
+				120));
+
+		channel.appendChild(settings_div);
+
 		channels.appendChild(channel);
 	}
 }
@@ -169,66 +280,48 @@ function process_json_message(message)
 		const data = message.data;
 
 		console.log(data);
-		if(data.automaitc_mode)
-		{
-			disable("AutoModeButton");
-			enable("ManuModeButton");
-		}
-		else
-		{
-			enable("AutoModeButton");
-			disable("ManuModeButton");
-		}
 
 		for(const key in data.channels)
 		{
 			const ch_data = data.channels[key];
 
-			const on = document.getElementById(key + "OFF");
-			const off = document.getElementById(key + "ON");
-
 			const upper = document.getElementById(key + "UPPER");
+			const upper_val = document.getElementById("val_" + key + "UPPER");
 			const lower = document.getElementById(key + "LOWER");
+			const lower_val = document.getElementById("val_" + key + "LOWER");
+			const on_time = document.getElementById(key + "ONTIME");
+			const on_time_val = document.getElementById("val_" + key + "ONTIME");
+			const switch_button = document.getElementById(key + "_switch");
+			const switch_button_div = switch_button.parentNode.parentNode;
 
 			const temp = document.getElementById(key + "temp");
 			const output = document.getElementById(key + "output");
 
+			const switch_mode = document.getElementById("ModeSwitch");
+
+			switch_mode.checked = data.automaitc_mode;
+			switch_button.checked = ch_data.output;
+
 			if(data.automaitc_mode == false)
 			{
-				if(ch_data.output)
-				{
-					on.style = "display:block;";
-					off.style = "display:none;";
-				}
-				else
-				{
-					on.style = "display:none;";
-					off.style = "display:block;";
-				}
 				upper.style = "display:none;";
 				lower.style = "display:none;";
+				on_time.style = "display:none;";
+				switch_button_div.style ="display:flex;";
+				output.style = "display:none;";
 			}
 			else
 			{
-
-				on.style = "display:none;";
-				off.style = "display:none;";
-
-
+				switch_button_div.style ="display:none;";
 				upper.style = "display:block;";
 				lower.style = "display:block;";
+				on_time.style = "display:block;";
+				output.style = "display:block;";
 			}
 
-			if(upper.value != ch_data.upper_bound)
-			{
-				upper.value = ch_data.upper_bound;
-			}
-
-
-			if(lower.value != ch_data.lower_bound)
-			{
-				lower.value = ch_data.lower_bound;
-			}
+			upper_val.innerHTML = ch_data.upper_bound + " °C";
+			lower_val.innerHTML = ch_data.lower_bound + " °C";
+			on_time_val.innerHTML = ch_data.on_time + " s";
 
 			if(ch_data.sensor_status == "OK")
 			{
@@ -327,7 +420,7 @@ function isValid(obj)
 function send_channel_update(event)
 {
 	send_command("set_limit", [
-		event.target.parentNode.parentNode.id,
+		event.target.parentNode.parentNode.parentNode.id,
 		event.target.id,
 		event.target.value]);
 }

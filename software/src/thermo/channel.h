@@ -9,20 +9,13 @@ using namespace std::chrono_literals;
 namespace thermo
 {
 
-// enum class ChannelState
-// {
-// 	StartUp,
-// 	HysteresisMode
-// };
-
 template<class PinInterfece>
 struct Channel
 {
-	LowerTemp lower_bound;
-	UpperTemp upper_bound;
+	LowerTemp lower_bound = LowerTemp(180);
+	UpperTemp upper_bound = UpperTemp(200);
 	Sensor sensor;
 	Output<PinInterfece> output;
-	// ChannelState state = ChannelState::StartUp;
 };
 
 } //namespace thermo

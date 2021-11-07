@@ -37,6 +37,26 @@ struct IOBuffer
 		}
 	}
 
+	IOBuffer& operator=(IOBuffer const& other)
+	{
+		std::memcpy(send, other.send, units()*2);
+		std::memcpy(recv, other.recv, units()*2);
+		return *this;
+	}
+
+	bool diff_in_send_data(IOBuffer const& other) const
+	{
+		for(size_t i=0; i<units(); ++i)
+		{
+			if(send[i] != other.send[i])
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	void set_channel(uint8_t channel, uint8_t value)
 	{
 		size_t index = (channel) * 2 + 1;
@@ -79,12 +99,11 @@ template<
 	class PinInterfece,
 	class StorageInterface,
 	uint8_t ChannelCount,
-	int LED_PIN = 2,
-	int SELECT_PIN = 16>
+	int SELECT_PIN = 2>
 struct Control
 {
 	using Channel_t = Channel<PinInterfece>;
-	using InputTpye = std::array<Channel_t, ChannelCount>;
+	using Channels_t = std::array<Channel_t, ChannelCount>;
 
 	struct Config
 	{
@@ -96,35 +115,21 @@ struct Control
 				std::chrono::seconds>, ChannelCount> bounds;
 	};
 
+	static Config default_config()
+	{
 
-	Control(InputTpye const& channels, MaxCurrent max_current)
-	: max_current_(max_current)
-	, channels_(channels)
-	, blink_deadline_(std::chrono::steady_clock::now())
+	}
+
+	Control()
+	: max_current_(MaxCurrent(30))
 	, process_deadline_(std::chrono::steady_clock::now())
+	, update_lock_deadline_(std::chrono::steady_clock::now())
 	{
 		PinInterfece::make_output(Pin(SELECT_PIN));
-		PinInterfece::make_output(Pin(LED_PIN));
 
 		PinInterfece::pull_high(Pin(SELECT_PIN));
-		PinInterfece::pull_high(Pin(LED_PIN));
 
 		auto cfg =
-		// Config{
-		// 			true,
-		// 			{
-		// 				std::make_tuple(
-		// 					channels_[0].lower_bound,
-		// 					channels_[0].upper_bound,
-		// 					60s*2),
-		// 				std::make_tuple(
-		// 					channels_[1].lower_bound,
-		// 					channels_[1].upper_bound,
-		// 					60s*2),
-		// 				std::make_tuple(
-		// 					channels_[2].lower_bound,
-		// 					channels_[2].upper_bound,
-		// 					60s*2)}};
 			StorageInterface::read(
 				"/config.bin",
 				Config{
@@ -133,15 +138,17 @@ struct Control
 						std::make_tuple(
 							channels_[0].lower_bound,
 							channels_[0].upper_bound,
-							10s),
+							120s),
 						std::make_tuple(
 							channels_[1].lower_bound,
 							channels_[1].upper_bound,
-							10s),
-						std::make_tuple(
-							channels_[2].lower_bound,
-							channels_[2].upper_bound,
-							10s)}});
+							120s)
+						// ,
+						// std::make_tuple(
+						// 	channels_[2].lower_bound,
+						// 	channels_[2].upper_bound,
+						// 	120s)
+					}});
 
 		print(cfg);
 
@@ -201,10 +208,40 @@ struct Control
 		}
 	}
 
+	void print(Channels_t const& channels)
+	{
+		uint8_t channel_counter = 0;
+		for(auto & channel : channels)
+		{
+			Serial.print("sensor[");
+			Serial.print(channel_counter++);
+			Serial.print("]: ");
+			if(channel.sensor.has_open_connection())
+			{
+				Serial.println("open connection");
+			}
+			else if(channel.sensor.has_short_to_gnd())
+			{
+				Serial.println("short to GND");
+			}
+			else if(channel.sensor.has_short_to_vcc())
+			{
+				Serial.println("short to vcc");
+			}
+			else
+			{
+				Serial.print("temp: ");
+				Serial.print(channel.sensor.hot_end_temperature());
+				Serial.print("°C, (");
+				Serial.print(channel.sensor.internal_temperatur());
+				Serial.println("°C)");
+			}
+		}
+	}
+
 	void update_config()
 	{
 		PinInterfece::pull_high(Pin(SELECT_PIN));
-		PinInterfece::pull_high(Pin(LED_PIN));
 
 		Serial.println("update_config");
 		auto const cfg = Config{automatic, get_bounds()};
@@ -237,24 +274,41 @@ struct Control
 		return false;
 	}
 
+	void transmit_buffer(IOBuffer<ChannelCount> & buffer)
+	{
+		// do
+		// {
+			buffer.print_send();
+			PinInterfece::pull_low(Pin(SELECT_PIN));
+			delay(10);
+			for(uint8_t i = 0; i < buffer.units(); i = i + 2)
+			{
+				buffer.recv[i] = PinInterfece::transfer(buffer.send[i]);
+				buffer.recv[i+1] = PinInterfece::transfer(buffer.send[i+1]);
+				delay(50);
+			}
+			PinInterfece::pull_high(Pin(SELECT_PIN));
+			delay(10);
+			//buffer.print_recv();
+		// }
+		// while(buffer_invalid());
+	}
+
 	void process()
 	{
-
 		if(not initialized_)
 		{
 			PinInterfece::pull_low(Pin(SELECT_PIN));
-			PinInterfece::pull_low(Pin(2));
 			delay(100);
-			Serial.print("sync spi chain");
-			while(PinInterfece::transfer(0x8a51) != 0x8a51)
+			Serial.print("sync spi chain ... ");
+			uint16_t data;
+			do
 			{
-				delay(10);
-				Serial.print(".");
-			}
-			Serial.println("");
+				data = PinInterfece::transfer(0x8a51);
+			} while(data != 0x8a51);
+			Serial.println("done");
 
 			PinInterfece::pull_high(Pin(SELECT_PIN));
-			PinInterfece::pull_high(Pin(2));
 			initialized_ = true;
 		}
 
@@ -262,39 +316,29 @@ struct Control
 
 		if(now > process_deadline_)
 		{
-			//Serial.println("process");
-
-			for(size_t index = 0; index < channels_.size(); ++index)
+			if(now > update_lock_deadline_ or not automatic)
 			{
-				io_buffer.set_channel(index, channels_[index].output.value());
-			}
-
-
-			do
-			{
-				//io_buffer.print_send();
-				PinInterfece::pull_low(Pin(SELECT_PIN));
-				PinInterfece::pull_low(Pin(2));
-				delay(10);
-				for(uint8_t i = 0; i < io_buffer.units(); i = i + 2)
+				update_lock_deadline_ = now + 6s;
+				for(size_t index = 0; index < channels_.size(); ++index)
 				{
-					io_buffer.recv[i] = PinInterfece::transfer(io_buffer.send[i]);
-					io_buffer.recv[i+1] = PinInterfece::transfer(io_buffer.send[i+1]);
-					delay(50);
-
-					// Serial.print(i);
-					// Serial.print(": ");
-					// Serial.print(io_buffer.recv[i], HEX);
-					// Serial.print(", ");
-					// Serial.println(io_buffer.recv[i+1], HEX);
+					io_buffer.set_channel(index, channels_[index].output.value());
 				}
-				PinInterfece::pull_high(Pin(SELECT_PIN));
-				PinInterfece::pull_high(Pin(2));
-				delay(10);
 			}
-			while(buffer_invalid());
 
-			// io_buffer.print_recv();
+			if(io_buffer.diff_in_send_data(prev_io_buffer))
+			{
+				Serial.println("all outputs off!");
+				for(size_t index = 0; index < channels_.size(); ++index)
+				{
+					prev_io_buffer.set_channel(index, 0);
+				}
+				transmit_buffer(prev_io_buffer);
+
+				print(channels_);
+			}
+
+			transmit_buffer(io_buffer);
+			prev_io_buffer = io_buffer;
 
 			for(uint8_t i = 0; i < io_buffer.units(); i = i + 2)
 			{
@@ -306,40 +350,7 @@ struct Control
 				}
 			}
 			process_deadline_ = now + 500ms;
-		}
 
-		if(std::chrono::steady_clock::now() >= blink_deadline_)
-		{
-			blink_deadline_ = std::chrono::steady_clock::now() + 2s;
-			PinInterfece::toggle(Pin(2));
-
-			uint8_t channel_counter = 0;
-			// for(auto & channel : channels_)
-			// {
-			// 	Serial.print("sensor[");
-			// 	Serial.print(channel_counter++);
-			// 	Serial.print("]: ");
-			// 	if(channel.sensor.has_open_connection())
-			// 	{
-			// 		Serial.println("open connection");
-			// 	}
-			// 	else if(channel.sensor.has_short_to_gnd())
-			// 	{
-			// 		Serial.println("short to GND");
-			// 	}
-			// 	else if(channel.sensor.has_short_to_vcc())
-			// 	{
-			// 		Serial.println("short to vcc");
-			// 	}
-			// 	else
-			// 	{
-			// 		Serial.print("temp: ");
-			// 		Serial.print(channel.sensor.hot_end_temperature());
-			// 		Serial.print("°C, (");
-			// 		Serial.print(channel.sensor.internal_temperatur());
-			// 		Serial.println("°C)");
-			// 	}
-			// }
 		}
 
 		if(not automatic)
@@ -351,7 +362,7 @@ struct Control
 
 		for(auto & channel : channels_)
 		{
-			if(channel.sensor.hot_end_temperature() > channel.upper_bound or
+			if((channel.sensor.hot_end_temperature() > channel.upper_bound) or
 			   channel.sensor.has_error() or
 			   channel.output.is_max_on())
 			{
@@ -364,7 +375,8 @@ struct Control
 		for(auto & channel : channels_)
 		{
 			if((channel.sensor.hot_end_temperature() < channel.lower_bound) and
-			   channel.output.is_deactivated())
+			   channel.output.is_deactivated() and
+			   not channel.sensor.has_error())
 			{
 				candidates_for_activation.push_back(&channel);
 			}
@@ -385,6 +397,7 @@ struct Control
 			{
 				channel->output.activate();
 				actual_current_ += channel->output.requirred_current();
+				// update_lock_deadline_ = now;
 			}
 		}
 	}
@@ -398,6 +411,17 @@ struct Control
 	void set_manual()
 	{
 		set_manual_();
+		update_config();
+	}
+
+	void set_bound(size_t id, MaxOnTime value)
+	{
+		if(id >= channels_.size())
+		{
+			return;
+		}
+
+		channels_[id].output.set_max_on_time(value);
 		update_config();
 	}
 
@@ -545,10 +569,11 @@ private:
 
 private:
 	MaxCurrent max_current_;
-	InputTpye channels_;
+	Channels_t channels_;
 	IOBuffer<ChannelCount> io_buffer;
-	std::chrono::steady_clock::time_point blink_deadline_;
+	IOBuffer<ChannelCount> prev_io_buffer;
 	std::chrono::steady_clock::time_point process_deadline_;
+	std::chrono::steady_clock::time_point update_lock_deadline_;
 	float actual_current_ = 0.0f;
 	uint16_t output_counter_ = 1;
 	bool automatic = false;

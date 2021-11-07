@@ -9,11 +9,11 @@
 	<script src="script.js"></script>
 </head>
 
-<body onload='open_web_socket();'>
+<body onload='open_web_socket()'>
 	<div id='Connecting' style='display:none'>
 		<div id='ConnectingContent'>
 			<h3>Connecting</h3>
-			<div class='Spinner'> <p style='display:none'> foo </p> </div>
+			<div class='Spinner'> <p style='display:none'> dummy </p> </div>
 		</div>
 	</div>
 	<div id='Connected'>
@@ -22,13 +22,18 @@
 				<h3 >ThermoControl</h3>
 			</div>
 			<div id='content'>
-				<div >
-					<button id='AutoModeButton' onClick='send_command("set_mode", "AUTO")'>Automatic Mode</button>
-					<button id='ManuModeButton' onClick='send_command("set_mode", "MANUAL")'>Manual Mode</button>
-				</div>
-				<div id="channels">foo</div>
+				<div class='mode_div'> Manuell <label class="switch">
+					  <input
+					  	type="checkbox"
+					  	id="ModeSwitch"
+					  	onClick="switch_mode(event.target.checked)" />
+					  <span class="slider round"> foo </span>
+					</label> Automatic </div>
+				<div id="channels">Connecting ...</div>
 			</div>
 		</div>
 	</div>
 </body>
 </html>
+
+

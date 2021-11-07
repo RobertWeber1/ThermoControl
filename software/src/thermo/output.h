@@ -12,9 +12,8 @@ struct Output
 {
 	using time_point = std::chrono::steady_clock::time_point;
 
-	Output(/*PinInterfece & pin_interface, */Pin pin, MaxCurrent current)
-	: pin_(pin)
-	, current_(current)
+	Output(MaxCurrent current = MaxCurrent(30))
+	: current_(current)
 	{}
 
 	time_point last_activation() const
@@ -82,13 +81,12 @@ struct Output
 	}
 
 private:
-	Pin pin_;
 	MaxCurrent current_;
 	time_point last_activation_;
 	time_point last_deactivation_;
 	time_point max_on_deadline_;
 	bool value_ = false;
-	std::chrono::seconds max_on_time_ = 60s * 5;
+	std::chrono::seconds max_on_time_ = 120s;
 };
 
 } //namespace thermo
