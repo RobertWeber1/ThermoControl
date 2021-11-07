@@ -1,0 +1,3 @@
+[submodule "software/esp8266-arduino-cmake"]
+	path = software/esp8266-arduino-cmake
+	url = https://github.com/makarenya/esp8266-arduino-cmake.git
